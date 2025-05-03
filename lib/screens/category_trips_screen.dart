@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../widgets/trip_item.dart';
 
+// Web uyumluluğu için ekran boyutları sabitleri
+class ScreenSize {
+  // Tablet boyutu - 768px ve üzeri için grid görünümüne geçecek
+  static const double tablet = 768;
+  // Desktop boyutu - 1024px ve üzeri için daha geniş grid
+  static const double desktop = 1024;
+}
 
 class CategoryTripsScreen extends StatefulWidget {
   static const routeName = '/category-trips';
@@ -59,29 +66,74 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white), // ← Drawer ikonu beyaz
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
-            categoryTitle,
-            style: TextStyle(color: Colors.white), // ← Başlık metni beyaz yapıldı
-                  ),
+          categoryTitle,
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.blue,
         centerTitle: true,
       ),
-      body: displayTrips.isEmpty
-          ? Center(child: Text('Bu kategoride gezi bulunamadı.'))
-          : ListView.builder(
-              itemCount: displayTrips.length,
-              itemBuilder: (context, index) {
-                return TripItem(
-                  id: displayTrips[index].id,
-                  title: displayTrips[index].title,
-                  imageUrl: displayTrips[index].imageUrl,
-                  duration: displayTrips[index].duration,
-                  season: displayTrips[index].season,
-                  tripType: displayTrips[index].tripType,
+      // LayoutBuilder ekleyerek ekran boyutuna göre farklı görünümler sağlıyoruz
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Ekran genişliğine göre içerik düzeni
+          if (constraints.maxWidth < ScreenSize.tablet) {
+            // MOBİL GÖRÜNÜM: Dikey liste görünümü
+            return displayTrips.isEmpty
+              ? Center(child: Text('Bu kategoride gezi bulunamadı.'))
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  itemCount: displayTrips.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: TripItem(
+                        id: displayTrips[index].id,
+                        title: displayTrips[index].title,
+                        imageUrl: displayTrips[index].imageUrl,
+                        duration: displayTrips[index].duration,
+                        season: displayTrips[index].season,
+                        tripType: displayTrips[index].tripType,
+                      ),
+                    );
+                  },
                 );
-              },
-            ),
+          } else {
+            // WEB GÖRÜNÜMÜ: Merkezi grid layout
+            final crossAxisCount = constraints.maxWidth < ScreenSize.desktop ? 2 : 3;
+            
+            return displayTrips.isEmpty
+              ? Center(child: Text('Bu kategoride gezi bulunamadı.'))
+              : Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 1600), 
+                    padding: EdgeInsets.zero, 
+                    child: GridView.builder(
+                      padding: EdgeInsets.all(40), 
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        childAspectRatio: 0.9, 
+                        crossAxisSpacing: 40, 
+                        mainAxisSpacing: 40, 
+                      ),
+                      itemCount: displayTrips.length,
+                      itemBuilder: (context, index) {
+                        return TripItem(
+                          id: displayTrips[index].id,
+                          title: displayTrips[index].title,
+                          imageUrl: displayTrips[index].imageUrl,
+                          duration: displayTrips[index].duration,
+                          season: displayTrips[index].season,
+                          tripType: displayTrips[index].tripType,
+                        );
+                      },
+                    ),
+                  ),
+                );
+          }
+        },
+      ),
     );
   }
 }

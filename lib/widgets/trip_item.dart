@@ -1,6 +1,4 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import '../screens/trip_detail_screen.dart';
 import '../models/trip.dart';
 
@@ -56,97 +54,91 @@ class TripItem extends StatelessWidget {
    
   @override
   Widget build(BuildContext context) {
-    return InkWell( 
-      onTap: () => selectTrip(context),
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        elevation: 7,
-        margin: EdgeInsets.all(10),
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 4,
+      child: InkWell(
+        onTap: () => selectTrip(context),
+        borderRadius: BorderRadius.circular(15),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
+            Expanded(
+              flex: 3,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(Icons.error, color: Colors.red),
+                        );
+                      },
+                    ),
                   ),
-                  child: Image.network(
-                    imageUrl,
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 250,
-                        width: double.infinity,
-                        color: Colors.grey[300],
-                        child: Icon(Icons.error, size: 50),
-                      );
-                    },
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
-                Container(
-                  height: 250,
-                  alignment: Alignment.bottomRight,
-                  padding: EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withAlpha(0),
-                        Colors.black.withAlpha(204),
-                      ],
-                      stops: [0.6, 1],
-                    )
-                  ),
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.headlineMedium
-                      ?.copyWith(color: Colors.white),
-                    overflow: TextOverflow.fade,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            Padding(  
-              padding: const EdgeInsets.all(20.0),
+            Container(
+              padding: EdgeInsets.all(16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [  
-                  Row(
-                    children: [
-                      Icon(Icons.today, color: Colors.blue),
-                      SizedBox(width: 6),
-                      Text('$duration gün')
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.wb_sunny, color: Colors.blue),
-                      SizedBox(width: 6),
-                      Text(seasonText)
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.family_restroom, color: Colors.blue),
-                      SizedBox(width: 6),
-                      Text(tripTypeText)
-                    ],
-                  ),
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildInfoItem(Icons.today, '$duration gün'),
+                  _buildInfoItem(Icons.wb_sunny, seasonText),
+                  _buildInfoItem(Icons.family_restroom, tripTypeText),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 20),
+        SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 14)),
+      ],
     );
   }
 }

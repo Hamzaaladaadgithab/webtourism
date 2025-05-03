@@ -12,6 +12,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   final DataService _dataService = DataService();
   bool _isLoading = true;
 
+  // Ekran boyutları için sabitler
+  static const double tabletBreakpoint = 768;
+  static const double desktopBreakpoint = 1024;
+
   @override
   void initState() {
     super.initState();
@@ -31,6 +35,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     });
   }
 
+  // Ekran genişliğine göre grid kolonlarını hesapla
+  int _calculateCrossAxisCount(double width) {
+    if (width >= desktopBreakpoint) {
+      return 3; // Desktop: 3 kolon
+    } else if (width >= tabletBreakpoint) {
+      return 2; // Tablet: 2 kolon
+    }
+    return 1; // Mobil: 1 kolon
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Category>>(
@@ -47,25 +61,34 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         }
 
         final categories = snapshot.data!;
-        return GridView.builder(
-          padding: EdgeInsets.all(10),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 200,
-            childAspectRatio: 7/8,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
+        final screenWidth = MediaQuery.of(context).size.width;
+        final crossAxisCount = _calculateCrossAxisCount(screenWidth);
+        
+        return Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 1600),
+            padding: EdgeInsets.zero, // Dış padding'i kaldırdık
+            child: GridView.builder(
+              padding: EdgeInsets.all(40), // İç padding'i artırdık
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: 1.3,
+                crossAxisSpacing: 40,
+                mainAxisSpacing: 40,
+              ),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return CategoryItem(
+                  category.id,
+                  category.title,
+                  category.imageUrl,
+                );
+              },
+            ),
           ),
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            final category = categories[index];
-            return CategoryItem(
-              category.id,
-              category.title,
-              category.imageUrl,
-            );
-          },
         );
       },
     );
   }
-}    
+}

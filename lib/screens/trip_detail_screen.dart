@@ -107,57 +107,71 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         title: Text(
           _selectedTrip!.title,
           style: TextStyle(color: Colors.white), // ← başlık metni beyaz
-            ),
+        ),
         backgroundColor: Colors.blue,
         centerTitle: true,
-
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 300,
-              width: double.infinity,
-              child: Image.network(
-                _selectedTrip!.imageUrl,
-                fit: BoxFit.cover,
-              ),
-            ),
-            buidlSectionTitle('Aktiviteler:'),
-            buildListViewContainer(
-              ListView.builder(
-                itemCount: _selectedTrip!.activities.length,
-                itemBuilder: (context, index) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 5,
-                      horizontal: 10,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    height: 300,
+                    width: double.infinity,
+                    child: Image.network(
+                      _selectedTrip!.imageUrl,
+                      fit: BoxFit.cover,
                     ),
-                    child: Text(_selectedTrip!.activities[index]),
                   ),
-                ),
-              ),
-            ),
-            buidlSectionTitle('Günlük Program:'),
-            buildListViewContainer(
-              ListView.builder(
-                itemCount: _selectedTrip!.program.length,
-                itemBuilder: (context, index) => Column(
-                  children: [
-                    ListTile(
-                      leading: CircleAvatar(
-                        child: Text('Gün${index + 1}'),
-                      ),
-                      title: Text(_selectedTrip!.program[index]),
+                  Container(
+                    constraints: BoxConstraints(maxWidth: 1600), // Daha geniş içerik alanı
+                    padding: EdgeInsets.all(40),
+                    child: Column(
+                      children: [
+                        buidlSectionTitle('Aktiviteler:'),
+                        buildListViewContainer(
+                          ListView.builder(
+                            itemCount: _selectedTrip!.activities.length,
+                            itemBuilder: (context, index) => Card(
+                              elevation: 2,
+                              margin: EdgeInsets.symmetric(vertical: 5, horizontal: 0),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 15,
+                                ),
+                                child: Text(_selectedTrip!.activities[index]),
+                              ),
+                            ),
+                          ),
+                        ),
+                        buidlSectionTitle('Günlük Program:'),
+                        buildListViewContainer(
+                          ListView.builder(
+                            itemCount: _selectedTrip!.program.length,
+                            itemBuilder: (context, index) => Card(
+                              elevation: 2,
+                              margin: EdgeInsets.symmetric(vertical: 5, horizontal: 0),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.blue,
+                                  child: Text(
+                                    'G${index + 1}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                title: Text(_selectedTrip!.program[index]),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Divider(),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
         child: Icon(
           widget.isFavorite(_selectedTrip!.id) ? Icons.star : Icons.star_border,

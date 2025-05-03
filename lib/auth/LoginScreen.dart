@@ -171,13 +171,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         showSpinner = true;
                       });
                       try {
-                        final newuser = await _auth.signInWithEmailAndPassword(
+                        await _auth.signInWithEmailAndPassword(
                           email: email,
                           password: password,
                         );
-                        if (newuser != null) {
-                          Navigator.pushNamed(context, TabsScreen.routeName);
-                        }
+                        Navigator.pushNamed(context, TabsScreen.routeName);
                       } catch (e) {
                         print(e);
                         ScaffoldMessenger.of(context).showSnackBar(

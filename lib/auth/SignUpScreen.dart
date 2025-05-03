@@ -105,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       });
                       try {
                         // Firebase Authentication işlemi
-                        final newUser = await _auth.createUserWithEmailAndPassword(
+                        await _auth.createUserWithEmailAndPassword(
                           email: email,
                           password: password,
                         );
