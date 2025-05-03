@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "441311683716",
+    "project_id": "fluttermobil-2b782",
+    "storage_bucket": "fluttermobil-2b782.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:441311683716:android:88d60cd791d4cae5408ed1",
+        "android_client_info": {
+          "package_name": "com.example.tourism"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaRmsG0pkuv7vOa0DZKVXPIdTF1ayl4dQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
