@@ -47,7 +47,7 @@ class TripItem extends StatelessWidget {
 
   void selectTrip(BuildContext context) {
     Navigator.of(context).pushNamed(
-      TripDetailScreen.screenRoute,
+      TripDetailScreen.routeName,
       arguments: id,
     );
   }

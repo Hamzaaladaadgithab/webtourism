@@ -41,72 +41,81 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: ModalProgressHUD(
         inAsyncCall: showSpinner,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: 30),
-                Container(
-                  height: 200,
-                  child: Image.asset('images/tourism.png'),
-                ),
-                SizedBox(height: 50),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double maxWidth = constraints.maxWidth > 600 ? 400 : constraints.maxWidth * 0.9;
+            return SingleChildScrollView(
+              child: Center(
+                child: Container(
+                  width: maxWidth,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 20),
+                        Container(
+                          height: constraints.maxWidth > 600 ? 180 : 150,
+                          child: Image.asset('images/tourism.png'),
+                        ),
+                        SizedBox(height: 40),
+                        Container(
+                          width: constraints.maxWidth > 600 ? 300 : double.infinity,
+                          child: TextField(
+                            keyboardType: TextInputType.emailAddress,
+                            textAlign: TextAlign.center,
+                            onChanged: (value) {
+                              email = value;
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Email',
+                              contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                                borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                                borderSide: BorderSide(color: Colors.grey, width: 2.0),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Container(
+                          width: constraints.maxWidth > 600 ? 300 : double.infinity,
+                          child: TextField(
+                            obscureText: true,
+                            textAlign: TextAlign.center,
+                            onChanged: (value) {
+                              password = value;
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Şifre',
+                              contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                                borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                                borderSide: BorderSide(color: Colors.grey, width: 2.0),
+                              ),
+                            ),
+                          ),
+                        ),
 
-                TextField(
-                  keyboardType: TextInputType.emailAddress,
-                  textAlign: TextAlign.center,
-                  onChanged: (value) {
-                    email = value;
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(color: Colors.grey, width: 2.0),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 10),
-
-                TextField(
-                  obscureText: true,
-                  textAlign: TextAlign.center,
-                  onChanged: (value) {
-                    password = value;
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Şifre',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(color: Colors.grey, width: 2.0),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 10),
-
-                // 🔐 Şifremi Unuttum Butonu
-                TextButton(
-                  onPressed: () async {
+                        SizedBox(height: 10),
+                        Container(
+                          width: constraints.maxWidth > 600 ? 300 : double.infinity,
+                          child: TextButton(
+                            onPressed: () async {
                     if (email.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Lütfen önce e-posta adresinizi girin")),
@@ -132,20 +141,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     }
                   },
-                  child: Text(
-                    "Şifremi Unuttum?",
-                    style: TextStyle(color: Colors.blue),
-                  ),
-                ),
-
-                SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: MyButton(
-                    color: Colors.blue[900]!,
-                    title: 'Giriş Yap',
-                    onPressed: () async {
+                            child: Text(
+                              "Şifremi Unuttum?",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          width: constraints.maxWidth > 600 ? 300 : double.infinity,
+                          child: MyButton(
+                            color: Colors.blue[900]!,
+                            title: 'Giriş Yap',
+                            onPressed: () async {
                       if (email.isEmpty || password.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("E-posta ve şifre alanlarını doldurun")),
@@ -186,12 +194,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           showSpinner = false;
                         });
                       }
-                    },
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

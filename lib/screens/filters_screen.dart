@@ -87,23 +87,27 @@ class _FiltersScreenState extends State<FiltersScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(Icons.save, color: Colors.white),
-            onPressed: () {
-              final selectedFilters = {
-                'summer': _Sommer,
-                'winter': _Winter,
-                'family': _Family,
-              };
-              widget.saveFilters(selectedFilters);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Filtreler kaydedildi!'),
-                  duration: Duration(seconds: 2),
-                  backgroundColor: Colors.blue,
-                ),
-              );
-            },
+          Container(
+            margin: EdgeInsets.only(right: 50),
+            child: IconButton(
+              icon: Icon(Icons.save, color: Colors.white),
+              onPressed: () {
+                final selectedFilters = {
+                  'summer': _Sommer,
+                  'winter': _Winter,
+                  'family': _Family,
+                };
+                widget.saveFilters(selectedFilters);
+                Navigator.pushReplacementNamed(context, '/tabs');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Filtreler kaydedildi!'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -116,15 +120,6 @@ class _FiltersScreenState extends State<FiltersScreen> {
           children: [
             Container(
               padding: EdgeInsets.all(16),
-              child: Text(
-                'Gezi Filtreleri',
-                style: TextStyle(
-                  fontFamily: 'ElMessiri',
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[800],
-                ),
-              ),
             ),
             Expanded(
               child: ListView(

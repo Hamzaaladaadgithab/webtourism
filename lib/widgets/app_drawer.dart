@@ -10,7 +10,7 @@ class AppDrawer extends StatelessWidget {
   Widget buildListTile(String title, IconData icon, VoidCallback onTapLink){    
     return ListTile(
       leading: Icon(
-        icon, 
+        icon,
       size:30, 
       color:Colors.blue),
       title: Text(
@@ -25,18 +25,18 @@ class AppDrawer extends StatelessWidget {
         onTap:onTapLink, //..
       
     );
-   }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child:Column(
-        children: [
-          Container(
+          children: [
+            Container(
             height: 100,
-            width: double.infinity,
+              width: double.infinity,
             padding:EdgeInsets.only(top:40),
-            alignment: Alignment.center,
+              alignment: Alignment.center,
             color:Colors.blue,
             child: Text('TOURİSM REHBERİ',
              style:TextStyle(
@@ -47,7 +47,7 @@ class AppDrawer extends StatelessWidget {
 
 
              ),
-          ),
+                  ),
           ),
           SizedBox(height:20),
 
@@ -61,10 +61,10 @@ class AppDrawer extends StatelessWidget {
           buildListTile('FİLTERELEME',
            Icons.filter_list,(){
              // Butona tıklanınca yapılacak işlem
-           Navigator.of(context).pushReplacementNamed(FiltersScreen.screenRoute);
+                    Navigator.of(context).pushReplacementNamed(FiltersScreen.screenRoute);
            }
-           ),
-        ],
+            ),
+          ],
       ),
     );
   }

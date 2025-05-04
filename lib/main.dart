@@ -68,28 +68,30 @@ class _MyAppState extends State<MyApp> {
     _dataService.getTripsStream().listen((trips) {
       setState(() {
         _availableTrips = trips;
-        _filterTrips();
+        _applyFilters();
       });
     });
   }
 
-  void _filterTrips() {
-    _availableTrips = _availableTrips.where((trip) {
-      if (_filters['summer'] == true && !trip.isInSummer) return false;
-      if (_filters['winter'] == true && !trip.isInWinter) return false;
-      if (_filters['family'] == true && !trip.isForFamilies) return false;
-      return true;
-    }).toList();
+  void _applyFilters() {
+    setState(() {
+      _availableTrips = _availableTrips.where((trip) {
+        if (_filters['summer'] == true && !trip.isInSummer) return false;
+        if (_filters['winter'] == true && !trip.isInWinter) return false;
+        if (_filters['family'] == true && !trip.isForFamilies) return false;
+        return true;
+      }).toList();
+    });
   }
 
   void _changeFilters(Map<String, bool> filterData) {
     setState(() {
       _filters = filterData;
-      _filterTrips();
+      _applyFilters();
     });
   }
 
-  void _mangeFavorite(String tripId) {
+  void _toggleFavorite(String tripId) {
     final existingIndex = _favoriteTrips.indexWhere((trip) => trip.id == tripId);
     if (existingIndex >= 0) {
       setState(() {
@@ -111,19 +113,23 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tourism App',
+      title: 'TOURİSM REHBERİ',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      initialRoute: WelcomeScreen.routeName, // Başlangıç sayfası
-    routes: {
+      initialRoute: '/',
+      routes: {
+        '/': (ctx) => WelcomeScreen(),
       WelcomeScreen.routeName: (ctx) => WelcomeScreen(),
       LoginScreen.routeName: (ctx) => LoginScreen(),
       SignUpScreen.routeName: (ctx) => SignUpScreen(),
-      '/tabs': (ctx) => TabsScreen(_favoriteTrips), // giriş sonrası buraya gider
+      '/tabs': (ctx) => TabsScreen(_favoriteTrips),
       CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(_availableTrips),
-      TripDetailScreen.screenRoute: (ctx) => TripDetailScreen(_mangeFavorite, _isFavorite),
+          TripDetailScreen.routeName: (context) => TripDetailScreen(
+            _toggleFavorite,
+            _isFavorite,
+          ),
       FiltersScreen.screenRoute: (ctx) => FiltersScreen(_filters, _changeFilters),
     },
     );
