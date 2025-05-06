@@ -121,17 +121,17 @@ class _MyAppState extends State<MyApp> {
       initialRoute: '/',
       routes: {
         '/': (ctx) => WelcomeScreen(),
-      WelcomeScreen.routeName: (ctx) => WelcomeScreen(),
-      LoginScreen.routeName: (ctx) => LoginScreen(),
-      SignUpScreen.routeName: (ctx) => SignUpScreen(),
-      '/tabs': (ctx) => TabsScreen(_favoriteTrips),
-      CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(_availableTrips),
-          TripDetailScreen.routeName: (context) => TripDetailScreen(
-            _toggleFavorite,
-            _isFavorite,
-          ),
-      FiltersScreen.screenRoute: (ctx) => FiltersScreen(_filters, _changeFilters),
-    },
+        WelcomeScreen.routeName: (ctx) => WelcomeScreen(),
+        LoginScreen.routeName: (ctx) => LoginScreen(),
+        SignUpScreen.routeName: (ctx) => SignUpScreen(),
+        '/tabs': (ctx) => TabsScreen(_favoriteTrips),
+        CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(_availableTrips),
+        TripDetailScreen.routeName: (context) => TripDetailScreen(
+          toggleFavorite: _toggleFavorite,
+          isFavorite: _isFavorite,
+        ),
+        FiltersScreen.screenRoute: (ctx) => FiltersScreen(_filters, _changeFilters),
+      },
     );
   }
 }

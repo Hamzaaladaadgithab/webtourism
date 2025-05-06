@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../widgets/trip_item.dart';
+import '../screens/trip_detail_screen.dart';
 
 // Web uyumluluğu için ekran boyutları sabitleri
 class ScreenSize {
@@ -95,6 +96,12 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
                         duration: displayTrips[index].duration,
                         season: displayTrips[index].season,
                         tripType: displayTrips[index].tripType,
+                        onTap: () {
+                          Navigator.of(context).pushNamed(
+                            TripDetailScreen.routeName,
+                            arguments: displayTrips[index].id,
+                          );
+                        },
                       ),
                     );
                   },

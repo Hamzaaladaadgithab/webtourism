@@ -9,7 +9,7 @@ class TripDetailScreen extends StatefulWidget {
   final Function(String) toggleFavorite;
   final Function(String) isFavorite;
 
-  const TripDetailScreen(this.toggleFavorite, this.isFavorite);
+  const TripDetailScreen({required this.toggleFavorite, required this.isFavorite});
 
   @override
   State<TripDetailScreen> createState() => _TripDetailScreenState();

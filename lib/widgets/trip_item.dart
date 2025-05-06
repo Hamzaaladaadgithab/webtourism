@@ -9,6 +9,7 @@ class TripItem extends StatelessWidget {
   final int duration;
   final TripType tripType;
   final Season season;
+  final VoidCallback? onTap;
 
   const TripItem({
     required this.id,
@@ -17,6 +18,7 @@ class TripItem extends StatelessWidget {
     required this.duration,
     required this.season,
     required this.tripType,
+    this.onTap,
   });
 
   String get seasonText {
@@ -55,21 +57,23 @@ class TripItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.zero,
+      margin: EdgeInsets.all(8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
       elevation: 4,
       child: InkWell(
-        onTap: () => selectTrip(context),
+        onTap: onTap ?? () => selectTrip(context),
         borderRadius: BorderRadius.circular(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              flex: 3,
-              child: Stack(
-                fit: StackFit.expand,
+        child: SizedBox(
+          height: 300,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 3,
+                child: Stack(
+                  fit: StackFit.expand,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
@@ -128,7 +132,8 @@ class TripItem extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildInfoItem(IconData icon, String text) {
