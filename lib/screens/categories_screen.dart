@@ -21,7 +21,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   static const double tabletBreakpoint = 768;
   static const double desktopBreakpoint = 1024;
 
-  @override
+  @override   
   void initState() {
     super.initState();
   }
