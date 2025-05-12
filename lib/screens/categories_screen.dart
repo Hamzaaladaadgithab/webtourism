@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/data_service.dart';
 import '../widgets/category_item.dart';
 import '../models/category.dart';
-import '../widgets/app_drawer.dart';
 
 class CategoriesScreen extends StatefulWidget {
   final bool showAppBar;
@@ -41,27 +40,60 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: widget.showAppBar ? AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: Colors.blue,
-        title: Text(
-          'GEZİ KATEGORİLERİ',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            fontFamily: 'ElMessiri',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-
-      ) : null,
-      drawer: AppDrawer(),
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text(
+                'Kategoriler',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: Colors.blue.shade900,
+              elevation: 0,
+              centerTitle: true,
+            )
+          : null,
       body: StreamBuilder<List<Category>>(
         stream: _dataService.getCategoriesStream(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('Kategori bulunamadı'));
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'Veriler yüklenirken bir hata oluştu',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.category_outlined, size: 48, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Henüz kategori eklenmemiş',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+            );
           }
 
           final categories = snapshot.data!;

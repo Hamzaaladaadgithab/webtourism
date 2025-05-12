@@ -1,47 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:tourism/models/trip.dart';
 import 'package:tourism/screens/category_trips_screen.dart';
-import './screens/filters_screen.dart';
 import './screens/tabs_screen.dart';
 import 'package:tourism/screens/trip_detail_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
 import 'services/data_service.dart';
+import 'services/admin_service.dart';
 import 'screens/WelcomeScreen.dart';
-import 'auth/LoginScreen.dart';
-import 'auth/SignUpScreen.dart';
+import 'auth/userLoginScreen.dart';
+import 'auth/userSignUpScreen.dart';
+import 'auth/AdminLoginScreen.dart';
+import 'auth/adminSignUpScreen.dart';
+import 'admin/admin_home_screen.dart';
+import 'admin/add_tour_screen.dart';
+import 'admin/manage_tours_screen.dart';
+import 'admin/manage_reservations_screen.dart';
+import 'admin/edit_tour_screen.dart';
+import 'admin/manage_users_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print('Firebase başarıyla başlatıldı!');
 
-    final firebaseService = FirebaseService();
-    final categories = await firebaseService.getCategoriesStream().first;
-    final trips = await firebaseService.getTripsStream().first;
-
-    if (categories.isEmpty || trips.isEmpty) {
-      print('Veriler yükleniyor...');
-      await firebaseService.uploadCategories();
-      await firebaseService.uploadTrips();
-      print('Veriler başarıyla yüklendi!');
-    } else {
-      print('Veriler zaten yüklenmiş.');
-    }
+    // İlk admin kullanıcısını oluştur
+    final adminService = AdminService();
+    await adminService.createInitialAdmin();
+    print('İlk admin kullanıcısı oluşturuldu veya zaten mevcut.');
   } catch (e) {
-    print('Firebase başlatılırken hata oluştu: $e');
+    print('Firebase başlatma hatası: $e');
   }
+
   runApp(MyApp());
-} 
-
-
-
-
-
+}
 
 class MyApp extends StatefulWidget {
   @override
@@ -52,11 +49,6 @@ class _MyAppState extends State<MyApp> {
   final DataService _dataService = DataService();
   List<Trip> _availableTrips = [];
   List<Trip> _favoriteTrips = [];
-  Map<String, bool> _filters = {
-    'summer': false,
-    'winter': false,
-    'family': false,
-  };
 
   @override
   void initState() {
@@ -68,26 +60,7 @@ class _MyAppState extends State<MyApp> {
     _dataService.getTripsStream().listen((trips) {
       setState(() {
         _availableTrips = trips;
-        _applyFilters();
       });
-    });
-  }
-
-  void _applyFilters() {
-    setState(() {
-      _availableTrips = _availableTrips.where((trip) {
-        if (_filters['summer'] == true && !trip.isInSummer) return false;
-        if (_filters['winter'] == true && !trip.isInWinter) return false;
-        if (_filters['family'] == true && !trip.isForFamilies) return false;
-        return true;
-      }).toList();
-    });
-  }
-
-  void _changeFilters(Map<String, bool> filterData) {
-    setState(() {
-      _filters = filterData;
-      _applyFilters();
     });
   }
 
@@ -122,16 +95,27 @@ class _MyAppState extends State<MyApp> {
       initialRoute: '/',
       routes: {
         '/': (ctx) => WelcomeScreen(),
-        WelcomeScreen.routeName: (ctx) => WelcomeScreen(),
-        LoginScreen.routeName: (ctx) => LoginScreen(),
-        SignUpScreen.routeName: (ctx) => SignUpScreen(),
-        '/tabs': (ctx) => TabsScreen(_favoriteTrips),
-        CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(_availableTrips),
-        TripDetailScreen.routeName: (context) => TripDetailScreen(
-          toggleFavorite: _toggleFavorite,
-          isFavorite: _isFavorite,
-        ),
-        FiltersScreen.screenRoute: (ctx) => FiltersScreen(_filters, _changeFilters),
+        UserLoginScreen.routeName: (ctx) => UserLoginScreen(),
+        UserSignUpScreen.routeName: (ctx) => UserSignUpScreen(),
+        AdminLoginScreen.routeName: (ctx) => AdminLoginScreen(),
+        AdminSignUpScreen.routeName: (ctx) => AdminSignUpScreen(),
+        TabsScreen.routeName: (ctx) => TabsScreen(_favoriteTrips),
+        CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(),
+        '/tripDetail': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return TripDetailScreen(
+            trip: args['trip'] as Trip,
+          );
+        },
+        AdminHomeScreen.routeName: (ctx) => AdminHomeScreen(),
+        AddTourScreen.routeName: (ctx) => AddTourScreen(),
+        ManageToursScreen.routeName: (ctx) => ManageToursScreen(),
+        ManageReservationsScreen.routeName: (ctx) => ManageReservationsScreen(),
+        ManageUsersScreen.routeName: (ctx) => ManageUsersScreen(),
+        '/edit-tour': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Trip;
+          return EditTourScreen(trip: args);
+        },
       },
     );
   }

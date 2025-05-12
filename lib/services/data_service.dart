@@ -7,65 +7,90 @@ class DataService {
 
   // Kategorileri gerçek zamanlı dinle
   Stream<List<Category>> getCategoriesStream() {
-    return _firestore.collection('categories').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        print('Category data: $data');
-        return Category(
-          id: data['id'],
-          title: data['title'],
-          imageUrl: data['imageUrl'],
-        );
-      }).toList();
-    });
+    try {
+      return _firestore.collection('categories').snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          print('Category data: $data');
+          return Category(
+            id: doc.id, // Belge ID'sini kullan
+            title: data['title'] ?? 'Isimsiz Kategori',
+            imageUrl: data['imageUrl'] ?? '',
+          );
+        }).toList();
+      });
+    } catch (e) {
+      print('Kategoriler dinlenirken hata: $e');
+      return Stream.value([]);
+    }
   }
 
   // Turları gerçek zamanlı dinle
   Stream<List<Trip>> getTripsStream() {
-    return _firestore.collection('trips').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        print('Trip data: $data');
-        
-        // Kategorileri kontrol et
-        final categories = List<String>.from(data['categories'] ?? []);
-        print('Trip categories: $categories');
-        
-        // TripType'ı kontrol et
-        final tripTypeStr = data['tripType'] ?? 'Exploration';
-        final tripType = TripType.values.firstWhere(
-          (e) => e.toString() == 'TripType.$tripTypeStr',
-          orElse: () => TripType.Exploration,
-        );
-        
-        // Season'ı kontrol et
-        final seasonStr = data['season'] ?? 'summer';
-        final season = Season.values.firstWhere(
-          (e) => e.toString() == 'Season.$seasonStr',
-          orElse: () => Season.summer,
-        );
-        
-        // Duration'ı kontrol et
-        final durationStr = data['duration'] is List ? data['duration'][0] : data['duration'];
-        final duration = int.tryParse(durationStr.toString().replaceAll(' gün', '')) ?? 1;
-        
-        return Trip(
-          id: data['id'],
-          categories: categories,
-          title: data['title'],
-          tripType: tripType,
-          season: season,
-          imageUrl: data['imageUrl'],
-          duration: duration,
-          activities: List<String>.from(data['activities'] ?? []),
-          program: List<String>.from(data['program'] ?? []),
-          isInSummer: data['isInSummer'] ?? false,
-          isInWinter: data['isInWinter'] ?? false,
-          isForFamilies: data['isForFamilies'] ?? false,
-          numberOfTrips: 1,
-        );
-      }).toList();
-    });
+    try {
+      return _firestore.collection('trips').snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          print('Trip data: $data');
+          
+          // Kategorileri kontrol et ve null kontrolü yap
+          List<String> categories = [];
+          try {
+            categories = (data['categories'] as List?)?.map((e) => e.toString()).toList() ?? [];
+          } catch (e) {
+            print('Kategori dönüşümünde hata: $e');
+          }
+          print('Trip categories: $categories');
+          
+          // TripType'ı kontrol et
+          final tripTypeStr = data['type'] ?? 'CULTURAL';
+          final tripType = TripType.values.firstWhere(
+            (e) => e.toString().split('.').last == tripTypeStr,
+            orElse: () => TripType.CULTURAL,
+          );
+          
+          // Season'ı kontrol et
+          final seasonStr = data['season'] ?? 'SUMMER';
+          final season = Season.values.firstWhere(
+            (e) => e.toString().split('.').last == seasonStr,
+            orElse: () => Season.SUMMER,
+          );
+          
+          // Duration'ı kontrol et
+          final durationStr = data['duration'] is List ? data['duration'][0] : data['duration'];
+          final duration = int.tryParse(durationStr.toString().replaceAll(' gün', '')) ?? 1;
+          
+          // Fiyatı kontrol et
+          final price = (data['price'] as num?)?.toDouble() ?? 0.0;
+          
+          return Trip(
+            id: doc.id,
+            title: data['title'] ?? 'Isimsiz Tur',
+            description: data['description'] ?? '',
+            imageUrl: data['imageUrl'] ?? '',
+            price: price,
+            duration: duration,
+            location: data['location'] ?? 'Konum belirtilmedi',
+            startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 1)),
+            season: season.toString().split('.').last,
+            type: tripType.toString().split('.').last,
+            isFamilyFriendly: data['isFamilyFriendly'] ?? false,
+            categories: categories,
+            activities: List<String>.from(data['activities'] ?? []),
+            program: data['program'] ?? '',
+            capacity: data['capacity'] ?? 10,
+            status: TripStatus.values.firstWhere(
+              (e) => e.toString().split('.').last == data['status'],
+              orElse: () => TripStatus.AVAILABLE,
+            ),
+          );
+        }).toList();
+      });
+    } catch (e) {
+      print('Turlar dinlenirken hata: $e');
+      return Stream.value([]);
+    }
   }
 
   // Kategorileri çek
@@ -75,9 +100,9 @@ class DataService {
       return snapshot.docs.map((doc) {
         final data = doc.data();
         return Category(
-          id: data['id'],
-          title: data['title'],
-          imageUrl: data['imageUrl'],
+          id: doc.id, // Belge ID'sini kullan
+          title: data['title'] ?? 'Isimsiz Kategori',
+          imageUrl: data['imageUrl'] ?? '',
         );
       }).toList();
     } catch (e) {
@@ -97,37 +122,47 @@ class DataService {
         final categories = List<String>.from(data['categories'] ?? []);
         
         // TripType'ı kontrol et
-        final tripTypeStr = data['tripType'] ?? 'Exploration';
+        final tripTypeStr = data['type'] ?? 'CULTURAL';
         final tripType = TripType.values.firstWhere(
-          (e) => e.toString() == 'TripType.$tripTypeStr',
-          orElse: () => TripType.Exploration,
+          (e) => e.toString().split('.').last == tripTypeStr,
+          orElse: () => TripType.CULTURAL,
         );
         
         // Season'ı kontrol et
-        final seasonStr = data['season'] ?? 'summer';
+        final seasonStr = data['season'] ?? 'SUMMER';
         final season = Season.values.firstWhere(
-          (e) => e.toString() == 'Season.$seasonStr',
-          orElse: () => Season.summer,
+          (e) => e.toString().split('.').last == seasonStr,
+          orElse: () => Season.SUMMER,
         );
         
         // Duration'ı kontrol et
         final durationStr = data['duration'] is List ? data['duration'][0] : data['duration'];
         final duration = int.tryParse(durationStr.toString().replaceAll(' gün', '')) ?? 1;
         
+        // Fiyatı kontrol et
+        final price = (data['price'] as num?)?.toDouble() ?? 0.0;
+        
         return Trip(
-          id: data['id'],
-          categories: categories,
-          title: data['title'],
-          tripType: tripType,
-          season: season,
-          imageUrl: data['imageUrl'],
+          id: doc.id,
+          title: data['title'] ?? 'Isimsiz Tur',
+          description: data['description'] ?? '',
+          imageUrl: data['imageUrl'] ?? '',
+          price: price,
           duration: duration,
+          location: data['location'] ?? 'Konum belirtilmedi',
+          startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 1)),
+          season: season.toString().split('.').last,
+          type: tripType.toString().split('.').last,
+          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
+          categories: categories,
           activities: List<String>.from(data['activities'] ?? []),
-          program: List<String>.from(data['program'] ?? []),
-          isInSummer: data['isInSummer'] ?? false,
-          isInWinter: data['isInWinter'] ?? false,
-          isForFamilies: data['isForFamilies'] ?? false,
-          numberOfTrips: 1,
+          program: data['program'] ?? '',
+          capacity: data['capacity'] ?? 10,
+          status: TripStatus.values.firstWhere(
+            (e) => e.toString().split('.').last == data['status'],
+            orElse: () => TripStatus.AVAILABLE,
+          ),
         );
       }).toList();
     } catch (e) {
@@ -137,7 +172,7 @@ class DataService {
   }
 
   // Tur programını güncelle
-  Future<void> updateTripProgram(String tripId, List<String> newProgram) async {
+  Future<void> updateTripProgram(String tripId, String newProgram) async {
     try {
       await _firestore.collection('trips').doc(tripId).update({
         'program': newProgram,
@@ -145,6 +180,7 @@ class DataService {
       print('Program başarıyla güncellendi!');
     } catch (e) {
       print('Program güncellenirken hata: $e');
+      rethrow;
     }
   }
 
@@ -157,6 +193,138 @@ class DataService {
       print('Aktiviteler başarıyla güncellendi!');
     } catch (e) {
       print('Aktiviteler güncellenirken hata: $e');
+      rethrow;
+    }
+  }
+
+  // Kategoriye göre gezileri getir
+  Stream<List<Trip>> getTripsByCategory(String categoryId) {
+    return _firestore
+        .collection('trips')
+        .where('categories', arrayContains: categoryId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Trip(
+          id: doc.id,
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          imageUrl: data['imageUrl'] ?? '',
+          price: (data['price'] ?? 0).toDouble(),
+          duration: data['duration'] ?? 1,
+          location: data['location'] ?? '',
+          startDate: (data['startDate'] as Timestamp).toDate(),
+          endDate: (data['endDate'] as Timestamp).toDate(),
+          season: data['season'] ?? 'SUMMER',
+          type: data['type'] ?? 'CULTURAL',
+          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
+          categories: List<String>.from(data['categories'] ?? []),
+          activities: List<String>.from(data['activities'] ?? []),
+          program: data['program'] ?? '',
+          capacity: data['capacity'] ?? 0,
+          status: TripStatus.values.firstWhere(
+            (e) => e.toString().split('.').last == data['status'],
+            orElse: () => TripStatus.AVAILABLE,
+          ),
+        );
+      }).toList();
+    });
+  }
+
+  // Tüm gezileri getir
+  Stream<List<Trip>> getAllTrips() {
+    return _firestore.collection('trips').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Trip(
+          id: doc.id,
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          imageUrl: data['imageUrl'] ?? '',
+          price: (data['price'] ?? 0).toDouble(),
+          duration: data['duration'] ?? 1,
+          location: data['location'] ?? '',
+          startDate: (data['startDate'] as Timestamp).toDate(),
+          endDate: (data['endDate'] as Timestamp).toDate(),
+          season: data['season'] ?? 'SUMMER',
+          type: data['type'] ?? 'CULTURAL',
+          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
+          categories: List<String>.from(data['categories'] ?? []),
+          activities: List<String>.from(data['activities'] ?? []),
+          program: data['program'] ?? '',
+          capacity: data['capacity'] ?? 0,
+          status: TripStatus.values.firstWhere(
+            (e) => e.toString().split('.').last == data['status'],
+            orElse: () => TripStatus.AVAILABLE,
+          ),
+        );
+      }).toList();
+    });
+  }
+
+  // Gezi detaylarını getir
+  Future<Trip?> getTripById(String tripId) async {
+    try {
+      final doc = await _firestore.collection('trips').doc(tripId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data()!;
+      return Trip(
+        id: doc.id,
+        title: data['title'] ?? '',
+        description: data['description'] ?? '',
+        imageUrl: data['imageUrl'] ?? '',
+        price: (data['price'] ?? 0).toDouble(),
+        duration: data['duration'] ?? 1,
+        location: data['location'] ?? '',
+        startDate: (data['startDate'] as Timestamp).toDate(),
+        endDate: (data['endDate'] as Timestamp).toDate(),
+        season: data['season'] ?? 'SUMMER',
+        type: data['type'] ?? 'CULTURAL',
+        isFamilyFriendly: data['isFamilyFriendly'] ?? false,
+        categories: List<String>.from(data['categories'] ?? []),
+        activities: List<String>.from(data['activities'] ?? []),
+        program: data['program'] ?? '',
+        capacity: data['capacity'] ?? 0,
+        status: TripStatus.values.firstWhere(
+          (e) => e.toString().split('.').last == data['status'],
+          orElse: () => TripStatus.AVAILABLE,
+        ),
+      );
+    } catch (e) {
+      print('Error getting trip: $e');
+      return null;
+    }
+  }
+
+  // Yeni gezi ekle
+  Future<void> addTrip(Trip trip) async {
+    try {
+      await _firestore.collection('trips').add(trip.toFirestore());
+    } catch (e) {
+      print('Error adding trip: $e');
+      rethrow;
+    }
+  }
+
+  // Gezi güncelle
+  Future<void> updateTrip(String tripId, Trip trip) async {
+    try {
+      await _firestore.collection('trips').doc(tripId).update(trip.toFirestore());
+    } catch (e) {
+      print('Error updating trip: $e');
+      rethrow;
+    }
+  }
+
+  // Gezi sil
+  Future<void> deleteTrip(String tripId) async {
+    try {
+      await _firestore.collection('trips').doc(tripId).delete();
+    } catch (e) {
+      print('Error deleting trip: $e');
+      rethrow;
     }
   }
 } 

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/categories_screen.dart';
 import '../screens/favorites_screen.dart';
+import '../screens/user_reservations_screen.dart';
+import '../screens/profile_screen.dart';
 import '../models/trip.dart';
-import '../widgets/app_drawer.dart';
 import '../services/data_service.dart';
 
 class TabsScreen extends StatefulWidget {
@@ -32,125 +33,139 @@ class _TabsScreenState extends State<TabsScreen> {
     _screens = [
       {
         'Screen': CategoriesScreen(showAppBar: false),
-        'Title': 'GEZİ KATEGORİLERİ',
+        'Title': 'Kategoriler',
         'icon': Icons.dashboard,
       },
       {
-        'Screen': FavoritesScreen(
-          _favoriteTrips,
-          onToggleFavorite: _toggleFavorite,
-        ),
-        'Title': 'GEZİ FAVORİLERİ',
+        'Screen': const FavoritesScreen(),
+        'Title': 'Favoriler',
         'icon': Icons.star,
+      },
+      {
+        'Screen': const UserReservationsScreen(),
+        'Title': 'Rezervasyonlar',
+        'icon': Icons.calendar_today,
+      },
+      {
+        'Screen': const ProfileScreen(),
+        'Title': 'Profil',
+        'icon': Icons.person,
       },
     ];
   }
 
   void _setupDataStream() {
     _dataService.getTripsStream().listen((trips) {
-      setState(() {
-        _availableTrips = trips;
-      });
+      if (mounted) {
+        setState(() {
+          _availableTrips = trips;
+        });
+      }
     });
   }
 
   void _toggleFavorite(String tripId) {
     final existingIndex = _favoriteTrips.indexWhere((trip) => trip.id == tripId);
-    setState(() {
-      if (existingIndex >= 0) {
-        _favoriteTrips.removeAt(existingIndex);
-      } else {
-        final trip = _availableTrips.firstWhere((trip) => trip.id == tripId);
-        _favoriteTrips.add(trip);
-      }
-      // Favoriler ekranını güncelle
-      _screens[1] = {
-        'Screen': FavoritesScreen(
-          _favoriteTrips,
-          onToggleFavorite: _toggleFavorite,
-        ),
-        'Title': 'GEZİ FAVORİLERİ',
-        'icon': Icons.star,
-      };
-    });
+    if (mounted) {
+      setState(() {
+        if (existingIndex >= 0) {
+          _favoriteTrips.removeAt(existingIndex);
+        } else {
+          final trip = _availableTrips.firstWhere((trip) => trip.id == tripId);
+          _favoriteTrips.add(trip);
+        }
+      });
+    }
   }
 
   void _selectScreen(int index) {
-    setState(() {
-      _selectedScreenIndex = index;
-    });
+    if (mounted) {
+      setState(() {
+        _selectedScreenIndex = index;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blue.shade900,
+        elevation: 0,
         title: Text(
           _screens[_selectedScreenIndex]['Title'],
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: 24,
-            fontFamily: 'ElMessiri',
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
         actions: [
           if (_auth.currentUser != null)
-            Padding(
-              padding: EdgeInsets.only(right: 100),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.person, color: Colors.white),
-                    onPressed: () {
-                      // Profil sayfasına yönlendirme
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${_auth.currentUser!.email}'),
-                          duration: Duration(seconds: 2),
-                          backgroundColor: Colors.blue,
-                        ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.logout, color: Colors.white),
-                    onPressed: () async {
-                      try {
-                        await FirebaseAuth.instance.signOut();
-                        Navigator.of(context).pushReplacementNamed('/');
-                      } catch (e) {
-                        print('Logout error: $e');
-                      }
-                    },
-                  ),
-                ],
-              ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: () async {
+                try {
+                  await FirebaseAuth.instance.signOut();
+                  if (mounted) {
+                    Navigator.of(context).pushReplacementNamed('/');
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Çıkış yapılırken hata oluştu: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
             ),
         ],
       ),
-      drawer: AppDrawer(),
-      body: _screens[_selectedScreenIndex]['Screen'],
-      bottomNavigationBar: BottomNavigationBar(
-        onTap: _selectScreen,
-        backgroundColor: Colors.blue,
-        unselectedItemColor: Colors.white70,
-        selectedItemColor: Colors.white,
-        currentIndex: _selectedScreenIndex,
-        items: _screens.map((screen) => BottomNavigationBarItem(
-          backgroundColor: Colors.blue,
-          icon: Icon(screen['icon'] as IconData),
-          label: screen['Title'] as String,
-        )).toList(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade900.withOpacity(0.1),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: _screens[_selectedScreenIndex]['Screen'],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: BottomNavigationBar(
+            onTap: _selectScreen,
+            backgroundColor: Colors.white,
+            unselectedItemColor: Colors.grey,
+            selectedItemColor: Colors.blue.shade900,
+            currentIndex: _selectedScreenIndex,
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+            items: _screens.map((screen) => BottomNavigationBarItem(
+              icon: Icon(screen['icon'] as IconData),
+              label: screen['Title'] as String,
+            )).toList(),
+          ),
+        ),
       ),
     );
   }
