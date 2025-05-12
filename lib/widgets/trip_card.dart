@@ -27,14 +27,18 @@ class TripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
+      margin: const EdgeInsets.all(8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
+        child: Container(
+          constraints: BoxConstraints(maxHeight: 420),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Resim
             Stack(
@@ -96,13 +100,16 @@ class TripCard extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // Açıklama
-                  Text(
-                    trip.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
+                  Container(
+                    height: 40,
+                    child: Text(
+                      trip.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -178,7 +185,7 @@ class TripCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 

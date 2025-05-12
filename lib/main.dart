@@ -3,6 +3,7 @@ import 'package:tourism/models/trip.dart';
 import 'package:tourism/screens/category_trips_screen.dart';
 import './screens/tabs_screen.dart';
 import 'package:tourism/screens/trip_detail_screen.dart';
+import 'package:tourism/screens/make_reservation_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
@@ -101,11 +102,9 @@ class _MyAppState extends State<MyApp> {
         AdminSignUpScreen.routeName: (ctx) => AdminSignUpScreen(),
         TabsScreen.routeName: (ctx) => TabsScreen(_favoriteTrips),
         CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(),
-        '/tripDetail': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return TripDetailScreen(
-            trip: args['trip'] as Trip,
-          );
+        TripDetailScreen.routeName: (context) {
+          final trip = ModalRoute.of(context)!.settings.arguments as Trip;
+          return TripDetailScreen(trip: trip);
         },
         AdminHomeScreen.routeName: (ctx) => AdminHomeScreen(),
         AddTourScreen.routeName: (ctx) => AddTourScreen(),
@@ -115,6 +114,10 @@ class _MyAppState extends State<MyApp> {
         '/edit-tour': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Trip;
           return EditTourScreen(trip: args);
+        },
+        '/make-reservation': (context) {
+          final trip = ModalRoute.of(context)!.settings.arguments as Trip;
+          return MakeReservationScreen(trip: trip);
         },
       },
     );

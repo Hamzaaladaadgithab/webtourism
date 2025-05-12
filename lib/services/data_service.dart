@@ -1,8 +1,120 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/category.dart';
 import '../models/trip.dart';
 
 class DataService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Favori gezileri getir
+  Stream<List<Trip>> getFavoriteTrips() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final tripIds = snapshot.docs.map((doc) => doc.id).toList();
+          if (tripIds.isEmpty) return [];
+
+          final tripsSnapshot = await _firestore
+              .collection('trips')
+              .where(FieldPath.documentId, whereIn: tripIds)
+              .get();
+
+          return tripsSnapshot.docs
+              .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
+              .toList();
+        });
+  }
+
+  // Gezi favori durumunu kontrol et
+  Future<bool> isTripFavorite(String tripId) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    final docSnapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc(tripId)
+        .get();
+
+    return docSnapshot.exists;
+  }
+
+  // Favori durumunu değiştir
+  Future<void> toggleFavorite(String tripId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Kullanıcı bulunamadı');
+    }
+
+    final favoriteRef = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc(tripId);
+
+    final docSnapshot = await favoriteRef.get();
+
+    if (docSnapshot.exists) {
+      await favoriteRef.delete();
+    } else {
+      await favoriteRef.set({
+        'addedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  String _parseProgram(dynamic value) {
+    if (value == null) return '';
+    
+    try {
+      if (value is String) return value;
+      if (value is List) {
+        // Listeyi birleştirip string yap
+        return value.join('\n');
+      }
+    } catch (e) {
+      print('Program dönüşümünde hata: $e');
+    }
+    
+    return ''; // Varsayılan değer
+  }
+
+  int _parseDuration(dynamic value) {
+    if (value == null) return 1;
+    
+    try {
+      if (value is int) return value;
+      if (value is String) {
+        // "5 gün" gibi bir string'den sayıyı çıkar
+        return int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+      }
+      if (value is List) {
+        // Liste içindeki ilk elemanı kullan
+        if (value.isNotEmpty) {
+          var firstValue = value[0];
+          if (firstValue is int) return firstValue;
+          if (firstValue is String) {
+            return int.tryParse(firstValue.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+          }
+        }
+      }
+    } catch (e) {
+      print('Süre dönüşümünde hata: $e');
+    }
+    
+    return 1; // Varsayılan değer
+  }
+
   DateTime _parseTimestamp(dynamic value, {bool addOneDay = false}) {
     if (value == null) {
       return addOneDay 
@@ -26,8 +138,6 @@ class DataService {
         ? DateTime.now().add(const Duration(days: 1))
         : DateTime.now();
   }
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Kategorileri gerçek zamanlı dinle
   Stream<List<Category>> getCategoriesStream() {
@@ -102,7 +212,7 @@ class DataService {
             isFamilyFriendly: data['isFamilyFriendly'] ?? false,
             categories: (data['categories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
             activities: (data['activities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-            program: data['program'] ?? '',
+            program: _parseProgram(data['program']),
             capacity: data['capacity'] ?? 10,
             status: TripStatus.values.firstWhere(
               (e) => e.toString().split('.').last == data['status'],
@@ -178,7 +288,7 @@ class DataService {
           isFamilyFriendly: data['isFamilyFriendly'] ?? false,
           categories: (data['categories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
           activities: (data['activities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-          program: data['program'] ?? '',
+          program: _parseProgram(data['program']),
           capacity: data['capacity'] ?? 10,
           status: TripStatus.values.firstWhere(
             (e) => e.toString().split('.').last == data['status'],
@@ -233,16 +343,16 @@ class DataService {
           description: data['description'] ?? '',
           imageUrl: data['imageUrl'] ?? '',
           price: (data['price'] ?? 0).toDouble(),
-          duration: data['duration'] ?? 1,
+          duration: _parseDuration(data['duration']),
           location: data['location'] ?? '',
-          startDate: (data['startDate'] as Timestamp).toDate(),
-          endDate: (data['endDate'] as Timestamp).toDate(),
+          startDate: _parseTimestamp(data['startDate']),
+          endDate: _parseTimestamp(data['endDate'], addOneDay: true),
           season: data['season'] ?? 'SUMMER',
           type: data['type'] ?? 'CULTURAL',
           isFamilyFriendly: data['isFamilyFriendly'] ?? false,
           categories: List<String>.from(data['categories'] ?? []),
           activities: List<String>.from(data['activities'] ?? []),
-          program: data['program'] ?? '',
+          program: _parseProgram(data['program']),
           capacity: data['capacity'] ?? 0,
           status: TripStatus.values.firstWhere(
             (e) => e.toString().split('.').last == data['status'],
@@ -264,16 +374,16 @@ class DataService {
           description: data['description'] ?? '',
           imageUrl: data['imageUrl'] ?? '',
           price: (data['price'] ?? 0).toDouble(),
-          duration: data['duration'] ?? 1,
+          duration: _parseDuration(data['duration']),
           location: data['location'] ?? '',
-          startDate: (data['startDate'] as Timestamp).toDate(),
-          endDate: (data['endDate'] as Timestamp).toDate(),
+          startDate: _parseTimestamp(data['startDate']),
+          endDate: _parseTimestamp(data['endDate'], addOneDay: true),
           season: data['season'] ?? 'SUMMER',
           type: data['type'] ?? 'CULTURAL',
           isFamilyFriendly: data['isFamilyFriendly'] ?? false,
           categories: List<String>.from(data['categories'] ?? []),
           activities: List<String>.from(data['activities'] ?? []),
-          program: data['program'] ?? '',
+          program: _parseProgram(data['program']),
           capacity: data['capacity'] ?? 0,
           status: TripStatus.values.firstWhere(
             (e) => e.toString().split('.').last == data['status'],
