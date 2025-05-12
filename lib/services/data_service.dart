@@ -3,6 +3,30 @@ import '../models/category.dart';
 import '../models/trip.dart';
 
 class DataService {
+  DateTime _parseTimestamp(dynamic value, {bool addOneDay = false}) {
+    if (value == null) {
+      return addOneDay 
+          ? DateTime.now().add(const Duration(days: 1))
+          : DateTime.now();
+    }
+
+    try {
+      if (value is Timestamp) {
+        return value.toDate();
+      } else if (value is DateTime) {
+        return value;
+      } else if (value is String) {
+        return DateTime.parse(value);
+      }
+    } catch (e) {
+      print('Tarih dönüşüm hatası: $e');
+    }
+
+    return addOneDay 
+        ? DateTime.now().add(const Duration(days: 1))
+        : DateTime.now();
+  }
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Kategorileri gerçek zamanlı dinle
@@ -71,13 +95,13 @@ class DataService {
             price: price,
             duration: duration,
             location: data['location'] ?? 'Konum belirtilmedi',
-            startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-            endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 1)),
+            startDate: _parseTimestamp(data['startDate']),
+            endDate: _parseTimestamp(data['endDate'], addOneDay: true),
             season: season.toString().split('.').last,
             type: tripType.toString().split('.').last,
             isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-            categories: categories,
-            activities: List<String>.from(data['activities'] ?? []),
+            categories: (data['categories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+            activities: (data['activities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
             program: data['program'] ?? '',
             capacity: data['capacity'] ?? 10,
             status: TripStatus.values.firstWhere(
@@ -118,9 +142,6 @@ class DataService {
       return snapshot.docs.map((doc) {
         final data = doc.data();
         
-        // Kategorileri kontrol et
-        final categories = List<String>.from(data['categories'] ?? []);
-        
         // TripType'ı kontrol et
         final tripTypeStr = data['type'] ?? 'CULTURAL';
         final tripType = TripType.values.firstWhere(
@@ -150,13 +171,13 @@ class DataService {
           price: price,
           duration: duration,
           location: data['location'] ?? 'Konum belirtilmedi',
-          startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 1)),
+          startDate: _parseTimestamp(data['startDate']),
+          endDate: _parseTimestamp(data['endDate'], addOneDay: true),
           season: season.toString().split('.').last,
           type: tripType.toString().split('.').last,
           isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-          categories: categories,
-          activities: List<String>.from(data['activities'] ?? []),
+          categories: (data['categories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+          activities: (data['activities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
           program: data['program'] ?? '',
           capacity: data['capacity'] ?? 10,
           status: TripStatus.values.firstWhere(
@@ -201,7 +222,7 @@ class DataService {
   Stream<List<Trip>> getTripsByCategory(String categoryId) {
     return _firestore
         .collection('trips')
-        .where('categories', arrayContains: categoryId)
+        .where('categories', arrayContainsAny: [categoryId])
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {

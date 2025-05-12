@@ -40,6 +40,11 @@ class ReservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dateFormat = DateFormat('d MMMM y');
+    final startDateStr = dateFormat.format(reservation.startDate);
+    final endDateStr = dateFormat.format(reservation.endDate);
+    final duration = reservation.endDate.difference(reservation.startDate).inDays;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -49,11 +54,10 @@ class ReservationCard extends StatelessWidget {
           children: [
             // Durum Göstergesi
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _getStatusColor().withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _getStatusColor()),
+                color: _getStatusColor().withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 _getStatusText(),
@@ -63,53 +67,62 @@ class ReservationCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-            // Rezervasyon Detayları
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Rezervasyon Tarihi',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      DateFormat('dd/MM/yyyy').format(reservation.startDate),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Toplam Tutar',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      '${reservation.totalPrice.toStringAsFixed(2)} TL',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            // Tur Başlığı
+            Text(
+              reservation.tripTitle,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+
+            // Tarih Aralığı
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 16, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Gidiş: $startDateStr',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 16, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Dönüş: $endDateStr',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Süre: $duration gün',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
 
             // Kişi Sayısı
             Row(

@@ -64,20 +64,6 @@ class _TabsScreenState extends State<TabsScreen> {
     });
   }
 
-  void _toggleFavorite(String tripId) {
-    final existingIndex = _favoriteTrips.indexWhere((trip) => trip.id == tripId);
-    if (mounted) {
-      setState(() {
-        if (existingIndex >= 0) {
-          _favoriteTrips.removeAt(existingIndex);
-        } else {
-          final trip = _availableTrips.firstWhere((trip) => trip.id == tripId);
-          _favoriteTrips.add(trip);
-        }
-      });
-    }
-  }
-
   void _selectScreen(int index) {
     if (mounted) {
       setState(() {
@@ -90,6 +76,7 @@ class _TabsScreenState extends State<TabsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.blue.shade900,
         elevation: 0,
         title: Text(

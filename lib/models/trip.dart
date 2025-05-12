@@ -54,10 +54,10 @@ class Trip {
       duration: data['duration'] ?? 0,
       location: data['location'] ?? '',
       startDate: data['startDate'] != null 
-          ? (data['startDate'] as Timestamp).toDate()
+          ? (data['startDate'] is Timestamp ? (data['startDate'] as Timestamp).toDate() : DateTime.now())
           : DateTime.now(),
       endDate: data['endDate'] != null 
-          ? (data['endDate'] as Timestamp).toDate()
+          ? (data['endDate'] is Timestamp ? (data['endDate'] as Timestamp).toDate() : DateTime.now().add(const Duration(days: 1)))
           : DateTime.now().add(const Duration(days: 1)),
       season: data['season'] ?? 'summer',
       type: data['type'] ?? 'individual',
