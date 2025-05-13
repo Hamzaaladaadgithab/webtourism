@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../services/reservation_service.dart';
 import '../services/auth_service.dart';
@@ -28,6 +29,33 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
   final AuthService _authService = AuthService();
 
   double get _totalPrice => widget.trip.price * _numberOfPeople;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser != null) {
+        final userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+
+        if (userData.exists) {
+          setState(() {
+            _nameController.text = userData.data()?['name'] ?? '';
+            _phoneController.text = userData.data()?['phone'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      print('Kullanıcı bilgileri yüklenirken hata: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -83,7 +111,9 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
         endDate: _endDate,
         numberOfPeople: _numberOfPeople,
         totalPrice: _totalPrice,
+        userName: _nameController.text,
         userPhone: _phoneController.text,
+        userId: currentUser.uid,
       );
 
       if (!mounted) return;

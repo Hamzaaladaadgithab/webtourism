@@ -16,24 +16,20 @@ class ReservationService {
     required DateTime endDate,
     required int numberOfPeople,
     required double totalPrice,
+    required String userName,
     required String userPhone,
+    required String userId,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw Exception('Kullanıcı girişi yapılmamış');
     }
 
-    final userDoc = await _firestore.collection('users').doc(user.uid).get();
-    if (!userDoc.exists) {
-      throw Exception('Kullanıcı bilgileri bulunamadı');
-    }
-
-    final userData = userDoc.data()!;
     final reservation = Reservation(
       id: '', // Firestore otomatik ID oluşturacak
-      userId: user.uid,
+      userId: userId,
       userEmail: user.email!,
-      userName: userData['name'] ?? '',
+      userName: userName,
       userPhone: userPhone,
       tripId: tripId,
       tripTitle: tripTitle,

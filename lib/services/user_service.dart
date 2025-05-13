@@ -41,6 +41,38 @@ class UserService {
     }
   }
 
+  // Favorilere ekle
+  Future<void> addToFavorites(String userId, String tripId) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('favorites')
+          .doc(tripId)
+          .set({
+        'addedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Favorilere eklenirken hata: $e');
+      throw Exception('Favorilere eklenirken bir hata oluştu');
+    }
+  }
+
+  // Favorilerden kaldır
+  Future<void> removeFromFavorites(String userId, String tripId) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('favorites')
+          .doc(tripId)
+          .delete();
+    } catch (e) {
+      print('Favorilerden kaldırılırken hata: $e');
+      throw Exception('Favorilerden kaldırılırken bir hata oluştu');
+    }
+  }
+
   // Kullanıcı rolünü güncelle
   Future<void> updateUserRole(String userId, String newRole) async {
     try {

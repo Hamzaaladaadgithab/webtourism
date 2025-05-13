@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../auth/userLoginScreen.dart';
 import '../services/user_service.dart';
@@ -47,7 +48,46 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     try {
       final user = await _authService.getCurrentUser();
       if (user == null) {
+        // Kullanıcı giriş yapmamışsa, giriş sayfasına yönlendir
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const UserLoginScreen()),
+        );
+        return;
+      }
+
+      // Kullanıcı bilgilerini kontrol et
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kullanıcı bilgileri bulunamadı. Lütfen tekrar giriş yapın.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Favori durumunu güncelle
+      if (_favorites.contains(widget.trip.id)) {
+        await _userService.removeFromFavorites(user.uid, widget.trip.id);
+        setState(() {
+          _favorites.remove(widget.trip.id);
+        });
+      } else {
+        await _userService.addToFavorites(user.uid, widget.trip.id);
+        setState(() {
+          _favorites.add(widget.trip.id);
+        });
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Favorilere eklemek için giriş yapmalısınız'),
             backgroundColor: Colors.red,

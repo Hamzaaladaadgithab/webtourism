@@ -36,7 +36,8 @@ class TripCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           constraints: BoxConstraints(maxHeight: 420),
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -101,7 +102,7 @@ class TripCard extends StatelessWidget {
 
                   // Açıklama
                   Container(
-                    height: 40,
+                    constraints: BoxConstraints(minHeight: 40),
                     child: Text(
                       trip.description,
                       maxLines: 2,
@@ -184,6 +185,7 @@ class TripCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     ));
   }

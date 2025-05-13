@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:tourism/models/trip.dart';
 import 'package:tourism/screens/category_trips_screen.dart';
 import './screens/tabs_screen.dart';
@@ -23,6 +24,7 @@ import 'admin/manage_users_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('tr_TR', null);
   
   try {
     await Firebase.initializeApp(
