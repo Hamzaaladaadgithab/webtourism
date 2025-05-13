@@ -52,6 +52,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
         capacity: 20,
         isFamilyFriendly: false,
         status: TripStatus.AVAILABLE,
+        createdAt: DateTime.now(),
       );
 
       await FirebaseFirestore.instance.collection('trips').doc(trip.id).set(trip.toFirestore());
@@ -111,6 +112,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.title),
                           ),
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen gezi adını girin';
@@ -127,6 +129,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             prefixIcon: Icon(Icons.description),
                           ),
                           maxLines: 3,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen açıklama girin';
@@ -142,6 +145,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.location_on),
                           ),
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen konum girin';
@@ -158,6 +162,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             prefixIcon: Icon(Icons.attach_money),
                           ),
                           keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen fiyat girin';
@@ -176,6 +181,8 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.image),
                           ),
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submitForm(),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen resim URL girin';

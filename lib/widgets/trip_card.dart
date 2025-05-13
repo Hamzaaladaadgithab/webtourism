@@ -35,9 +35,8 @@ class TripCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          constraints: BoxConstraints(maxHeight: 420),
-          child: SingleChildScrollView(
-            child: Column(
+          child: Flex(
+            direction: Axis.vertical,
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -110,6 +109,7 @@ class TripCard extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
+                        height: 1.2,
                       ),
                     ),
                   ),
@@ -130,11 +130,14 @@ class TripCard extends StatelessWidget {
                                   color: Colors.red,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  trip.location,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
+                                Expanded(
+                                  child: Text(
+                                    trip.location,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -148,11 +151,14 @@ class TripCard extends StatelessWidget {
                                   color: Colors.blue,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  '${trip.startDate.day} ${_getMonthName(trip.startDate.month)} - ${trip.endDate.day} ${_getMonthName(trip.endDate.month)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
+                                Flexible(
+                                  child: Text(
+                                    '${trip.startDate.day} ${_getMonthName(trip.startDate.month)} - ${trip.endDate.day} ${_getMonthName(trip.endDate.month)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -186,8 +192,8 @@ class TripCard extends StatelessWidget {
           ],
         ),
       ),
-      ),
-    ));
+    ),
+    );
+
   }
 }
-

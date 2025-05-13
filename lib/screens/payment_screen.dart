@@ -374,23 +374,32 @@ class _CardNumberFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
+    // Sadece rakamları al (0-9 arası)
+    String temizMetin = '';
+    for (int i = 0; i < newValue.text.length; i++) {
+      if (newValue.text[i].contains(RegExp(r'[0-9]'))) {
+        temizMetin += newValue.text[i];
+      }
     }
 
-    final text = newValue.text.replaceAll(' ', '');
-    final buffer = StringBuffer();
+    // Maksimum 16 rakam olsun
+    if (temizMetin.length > 16) {
+      temizMetin = temizMetin.substring(0, 16);
+    }
 
-    for (int i = 0; i < text.length; i++) {
-      if (i > 0 && i % 4 == 0) {
-        buffer.write(' ');
+    // Her 4 rakamdan sonra boşluk ekle
+    final sonuc = StringBuffer();
+    for (int i = 0; i < temizMetin.length; i++) {
+      // Her 4 rakamdan sonra boşluk ekle (son grup hariç)
+      if (i > 0 && i % 4 == 0 && i != temizMetin.length) {
+        sonuc.write(' ');
       }
-      buffer.write(text[i]);
+      sonuc.write(temizMetin[i]);
     }
 
     return TextEditingValue(
-      text: buffer.toString(),
-      selection: TextSelection.collapsed(offset: buffer.length),
+      text: sonuc.toString(),
+      selection: TextSelection.collapsed(offset: sonuc.length),
     );
   }
 }
@@ -401,23 +410,31 @@ class _ExpiryFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
+    // Sadece rakamları al
+    String temizMetin = '';
+    for (int i = 0; i < newValue.text.length; i++) {
+      if (newValue.text[i].contains(RegExp(r'[0-9]'))) {
+        temizMetin += newValue.text[i];
+      }
     }
 
-    final text = newValue.text;
-    final buffer = StringBuffer();
+    // Maksimum 4 rakam (AA/YY formatı için)
+    if (temizMetin.length > 4) {
+      temizMetin = temizMetin.substring(0, 4);
+    }
 
-    for (int i = 0; i < text.length; i++) {
-      if (i == 2 && text.length > 2) {
-        buffer.write('/');
+    // AA/YY formatını oluştur
+    String sonuc = temizMetin;
+    if (temizMetin.length >= 2) {
+      sonuc = temizMetin.substring(0, 2);
+      if (temizMetin.length > 2) {
+        sonuc += '/' + temizMetin.substring(2);
       }
-      buffer.write(text[i]);
     }
 
     return TextEditingValue(
-      text: buffer.toString(),
-      selection: TextSelection.collapsed(offset: buffer.length),
+      text: sonuc,
+      selection: TextSelection.collapsed(offset: sonuc.length),
     );
   }
 }

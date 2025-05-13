@@ -92,6 +92,7 @@ class _AdminSignUpScreenState extends State<AdminSignUpScreen> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.person),
                           ),
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen kullanıcı adınızı girin';
@@ -108,6 +109,7 @@ class _AdminSignUpScreenState extends State<AdminSignUpScreen> {
                             prefixIcon: Icon(Icons.email),
                           ),
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen e-posta adresinizi girin';
@@ -127,6 +129,8 @@ class _AdminSignUpScreenState extends State<AdminSignUpScreen> {
                             prefixIcon: Icon(Icons.lock),
                           ),
                           obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen şifrenizi girin';

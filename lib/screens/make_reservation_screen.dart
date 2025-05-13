@@ -96,13 +96,74 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
   Future<void> _makeReservation() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Ödeme formunu göster
+    final paymentResult = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Ödeme Bilgileri'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Kart Numarası',
+                    hintText: '1234 5678 9012 3456',
+                  ),
+                  keyboardType: TextInputType.number,
+                  maxLength: 16,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Son Kullanma',
+                          hintText: 'AA/YY',
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 5,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'CVV',
+                          hintText: '123',
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 3,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Ödemeyi Tamamla'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (paymentResult != true) return;
+
     setState(() => _isLoading = true);
 
     try {
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('Kullanıcı girişi yapılmamış');
-      }
+      if (currentUser == null) throw Exception('Kullanıcı girişi yapılmamış');
 
       await _reservationService.createReservation(
         tripId: widget.trip.id,

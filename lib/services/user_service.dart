@@ -47,10 +47,8 @@ class UserService {
       await _firestore
           .collection('users')
           .doc(userId)
-          .collection('favorites')
-          .doc(tripId)
-          .set({
-        'addedAt': FieldValue.serverTimestamp(),
+          .update({
+        'favorites': FieldValue.arrayUnion([tripId])
       });
     } catch (e) {
       print('Favorilere eklenirken hata: $e');
@@ -64,9 +62,9 @@ class UserService {
       await _firestore
           .collection('users')
           .doc(userId)
-          .collection('favorites')
-          .doc(tripId)
-          .delete();
+          .update({
+        'favorites': FieldValue.arrayRemove([tripId])
+      });
     } catch (e) {
       print('Favorilerden kaldırılırken hata: $e');
       throw Exception('Favorilerden kaldırılırken bir hata oluştu');

@@ -62,6 +62,7 @@ class _UserReservationsScreenState extends State<UserReservationsScreen> {
         lastLogin: DateTime.now(),
       );
 
+      // İlk önce durumu iptal edildi olarak güncelle
       await _reservationService.updateReservationStatus(
         reservationId: reservationId,
         newStatus: ReservationStatus.cancelled,
@@ -71,10 +72,24 @@ class _UserReservationsScreenState extends State<UserReservationsScreen> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Rezervasyon başarıyla iptal edildi'),
-          backgroundColor: Colors.green,
+          content: Text('Rezervasyon iptal edildi. 5 saniye sonra silinecek...'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 4),
         ),
       );
+
+      // 5 saniye bekle ve sonra rezervasyonu sil
+      await Future.delayed(const Duration(seconds: 5));
+      await _reservationService.deleteReservation(reservationId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rezervasyon başarıyla silindi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

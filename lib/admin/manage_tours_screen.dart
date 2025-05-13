@@ -127,6 +127,7 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('trips')
+                    .orderBy('createdAt', descending: true)
                     .where('season', isEqualTo: _selectedSeason)
                     .where('type', isEqualTo: _selectedType)
                     .snapshots(),
@@ -161,28 +162,7 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                     itemBuilder: (context, index) {
                       final doc = snapshot.data!.docs[index];
                       final data = doc.data() as Map<String, dynamic>;
-                      final trip = Trip(
-                        id: doc.id,
-                        title: data['title'] ?? '',
-                        description: data['description'] ?? '',
-                        imageUrl: data['imageUrl'] ?? '',
-                        price: (data['price'] as num?)?.toDouble() ?? 0.0,
-                        duration: int.tryParse(data['duration'].toString()) ?? 1,
-                        location: data['location'] ?? '',
-                        startDate: data['startDate'] != null ? DateTime.parse(data['startDate']) : DateTime.now(),
-                        endDate: data['endDate'] != null ? DateTime.parse(data['endDate']) : DateTime.now().add(const Duration(days: 1)),
-                        season: data['season'] ?? 'SUMMER',
-                        type: data['type'] ?? 'CULTURAL',
-                        isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-                        categories: List<String>.from(data['categories'] ?? []),
-                        activities: List<String>.from(data['activities'] ?? []),
-                        program: data['program'] ?? '',
-                        capacity: data['capacity'] ?? 10,
-                        status: TripStatus.values.firstWhere(
-                          (e) => e.toString().split('.').last == data['status'],
-                          orElse: () => TripStatus.AVAILABLE,
-                        ),
-                      );
+                      final trip = Trip.fromFirestore(doc.id, data);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 16),

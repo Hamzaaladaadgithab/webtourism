@@ -51,7 +51,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         // Kullanıcı giriş yapmamışsa, giriş sayfasına yönlendir
         if (!mounted) return;
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const UserLoginScreen()),
+          MaterialPageRoute(builder: (context) => UserLoginScreen()),
         );
         return;
       }
@@ -76,35 +76,19 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       // Favori durumunu güncelle
       if (_favorites.contains(widget.trip.id)) {
         await _userService.removeFromFavorites(user.uid, widget.trip.id);
+        if (!mounted) return;
         setState(() {
           _favorites.remove(widget.trip.id);
         });
       } else {
         await _userService.addToFavorites(user.uid, widget.trip.id);
+        if (!mounted) return;
         setState(() {
           _favorites.add(widget.trip.id);
         });
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Favorilere eklemek için giriş yapmalısınız'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      await _userService.toggleFavorite(user.uid, widget.trip.id);
-      setState(() {
-        if (_favorites.contains(widget.trip.id)) {
-          _favorites.remove(widget.trip.id);
-        } else {
-          _favorites.add(widget.trip.id);
-        }
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_favorites.contains(widget.trip.id)
@@ -114,6 +98,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Hata: ${e.toString()}'),

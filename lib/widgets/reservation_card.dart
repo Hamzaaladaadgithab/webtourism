@@ -150,8 +150,7 @@ class ReservationCard extends StatelessWidget {
             ),
 
             // İptal Butonu
-            if (reservation.status == ReservationStatus.pending ||
-                reservation.status == ReservationStatus.confirmed) ...[
+            if (reservation.status == ReservationStatus.pending) ...[
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/tabs_screen.dart';
 import 'userSignUpScreen.dart';
 
@@ -22,10 +23,32 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // Firestore'da kullanıcı dokümanını kontrol et
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      // Eğer kullanıcı dokümanı yoksa oluştur
+      if (!userDoc.exists) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'email': _emailController.text.trim(),
+          'name': userCredential.user!.email!.split('@')[0],
+          'phone': '',
+          'role': 'user',
+          'createdAt': DateTime.now(),
+          'favorites': [],
+        });
+      }
+
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(TabsScreen.routeName);
     } catch (error) {
@@ -58,6 +81,29 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             border: OutlineInputBorder(),
           ),
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) async {
+            try {
+              await FirebaseAuth.instance.sendPasswordResetEmail(
+                email: emailController.text.trim(),
+              );
+              if (!mounted) return;
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Şifre sıfırlama bağlantısı gönderildi'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } catch (error) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Hata: ${error.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
         ),
         actions: [
           TextButton(
@@ -134,6 +180,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                             prefixIcon: Icon(Icons.email),
                           ),
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen e-posta adresinizi girin';
@@ -153,6 +200,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                             prefixIcon: Icon(Icons.lock),
                           ),
                           obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen şifrenizi girin';

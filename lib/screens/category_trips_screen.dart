@@ -175,17 +175,8 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
 
           return LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
-              final childAspectRatio = constraints.maxWidth > 600 ? 1.5 : 1.2;
-
-              return GridView.builder(
+              return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  childAspectRatio: childAspectRatio,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
                 itemCount: trips.length,
                 itemBuilder: (context, index) {
                   final trip = trips[index];

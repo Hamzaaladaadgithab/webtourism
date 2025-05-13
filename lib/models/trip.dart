@@ -23,6 +23,7 @@ class Trip {
   final String program;
   final int capacity;
   final TripStatus status;
+  final DateTime? createdAt;
 
   Trip({
     required this.id,
@@ -42,32 +43,41 @@ class Trip {
     required this.program,
     required this.capacity,
     required this.status,
+    this.createdAt,
   });
 
   factory Trip.fromFirestore(String id, Map<String, dynamic> data) {
+    List<String> convertToStringList(dynamic value) {
+      if (value == null) return [];
+      if (value is List) {
+        return value.map((e) => e?.toString() ?? '').toList();
+      }
+      return [];
+    }
+
     return Trip(
       id: id,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
+      title: data['title']?.toString() ?? '',
+      description: data['description']?.toString() ?? '',
+      imageUrl: data['imageUrl']?.toString() ?? '',
       price: (data['price'] ?? 0).toDouble(),
       duration: data['duration'] ?? 0,
-      location: data['location'] ?? '',
+      location: data['location']?.toString() ?? '',
       startDate: data['startDate'] != null 
-          ? (data['startDate'] is Timestamp ? (data['startDate'] as Timestamp).toDate() : DateTime.now())
-          : DateTime.now(),
+          ? (data['startDate'] is Timestamp ? (data['startDate'] as Timestamp).toDate() : DateTime.fromMillisecondsSinceEpoch(0))
+          : DateTime.fromMillisecondsSinceEpoch(0),
       endDate: data['endDate'] != null 
-          ? (data['endDate'] is Timestamp ? (data['endDate'] as Timestamp).toDate() : DateTime.now().add(const Duration(days: 1)))
-          : DateTime.now().add(const Duration(days: 1)),
-      season: data['season'] ?? 'summer',
-      type: data['type'] ?? 'individual',
+          ? (data['endDate'] is Timestamp ? (data['endDate'] as Timestamp).toDate() : DateTime.fromMillisecondsSinceEpoch(86400000))
+          : DateTime.fromMillisecondsSinceEpoch(86400000),
+      season: data['season']?.toString() ?? 'summer',
+      type: data['type']?.toString() ?? 'individual',
       isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-      categories: List<String>.from(data['categories'] ?? []),
-      activities: List<String>.from(data['activities'] ?? []),
-      program: data['program'] ?? '',
+      categories: convertToStringList(data['categories']),
+      activities: convertToStringList(data['activities']),
+      program: data['program']?.toString() ?? '',
       capacity: data['capacity'] ?? 0,
       status: TripStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == data['status'],
+        (e) => e.toString().split('.').last == (data['status']?.toString() ?? ''),
         orElse: () => TripStatus.AVAILABLE,
       ),
     );
@@ -91,6 +101,7 @@ class Trip {
       'program': program,
       'capacity': capacity,
       'status': status.toString().split('.').last,
+      'createdAt': createdAt,
     };
   }
 

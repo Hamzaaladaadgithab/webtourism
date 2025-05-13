@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class UserSignUpScreen extends StatefulWidget {
@@ -22,10 +23,21 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // Firebase Authentication'da kullanıcı oluştur
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // Firestore'da kullanıcı dokümanı oluştur
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'email': _emailController.text.trim(),
+        'name': _usernameController.text.trim(),
+        'phone': '',
+        'role': 'user',
+        'createdAt': DateTime.now(),
+        'favorites': [],
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -92,6 +104,7 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.person),
                           ),
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen kullanıcı adınızı girin';
@@ -108,6 +121,7 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                             prefixIcon: Icon(Icons.email),
                           ),
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen e-posta adresinizi girin';
@@ -127,6 +141,8 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                             prefixIcon: Icon(Icons.lock),
                           ),
                           obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen şifrenizi girin';

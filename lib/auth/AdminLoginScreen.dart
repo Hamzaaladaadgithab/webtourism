@@ -58,6 +58,29 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             border: OutlineInputBorder(),
           ),
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) async {
+            try {
+              await FirebaseAuth.instance.sendPasswordResetEmail(
+                email: emailController.text.trim(),
+              );
+              if (!mounted) return;
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Şifre sıfırlama bağlantısı gönderildi'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } catch (error) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Hata: ${error.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
         ),
         actions: [
           TextButton(
@@ -134,6 +157,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             prefixIcon: Icon(Icons.email),
                           ),
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen e-posta adresinizi girin';
@@ -153,6 +177,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             prefixIcon: Icon(Icons.lock),
                           ),
                           obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Lütfen şifrenizi girin';

@@ -4,68 +4,51 @@ import '../models/trip.dart';
 class SearchService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Gezileri arama ve filtreleme
+  // Modern ve basit arama sistemi
   Future<List<Trip>> searchTrips({
     String? searchQuery,
     String? category,
-    double? minPrice,
     double? maxPrice,
-    DateTime? startDate,
-    DateTime? endDate,
-    int? minDuration,
-    int? maxDuration,
+    DateTime? selectedDate,
   }) async {
     try {
+      // Ana sorgu
       Query query = _firestore.collection('trips');
 
-      // Kategori filtresi
-      if (category != null && category.isNotEmpty) {
-        query = query.where('categories', arrayContains: category);
+      // 1. Metin araması
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final searchLower = searchQuery.toLowerCase();
+        query = query.where('searchTags', arrayContains: searchLower);
       }
 
-      // Fiyat filtresi
-      if (minPrice != null) {
-        query = query.where('price', isGreaterThanOrEqualTo: minPrice);
+      // 2. Kategori filtresi
+      if (category != null && category.isNotEmpty) {
+        query = query.where('category', isEqualTo: category);
       }
+
+      // 3. Fiyat filtresi
       if (maxPrice != null) {
         query = query.where('price', isLessThanOrEqualTo: maxPrice);
       }
 
-      // Tarih filtresi
-      if (startDate != null) {
-        query = query.where('startDate', isGreaterThanOrEqualTo: startDate);
-      }
-      if (endDate != null) {
-        query = query.where('endDate', isLessThanOrEqualTo: endDate);
-      }
-
-      // Süre filtresi
-      if (minDuration != null) {
-        query = query.where('duration', isGreaterThanOrEqualTo: minDuration);
-      }
-      if (maxDuration != null) {
-        query = query.where('duration', isLessThanOrEqualTo: maxDuration);
+      // 4. Tarih filtresi
+      if (selectedDate != null) {
+        // Seçilen tarihte başlayan turları getir
+        query = query.where('startDate', 
+          isGreaterThanOrEqualTo: Timestamp.fromDate(selectedDate));
       }
 
+      // Sorguyu çalıştır
       final querySnapshot = await query.get();
-      final trips = querySnapshot.docs.map((doc) => 
-        Trip.fromFirestore(doc.id, doc.data() as Map<String, dynamic>)
-      ).toList();
-
-      // Metin araması (Firestore'da tam metin araması olmadığı için client-side yapıyoruz)
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        final searchLower = searchQuery.toLowerCase();
-        return trips.where((trip) {
-          return trip.title.toLowerCase().contains(searchLower) ||
-                 trip.description.toLowerCase().contains(searchLower) ||
-                 trip.location.toLowerCase().contains(searchLower);
-        }).toList();
-      }
-
-      return trips;
+      
+      // Sonuçları Trip modellerine dönüştür
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return Trip.fromFirestore(doc.id, data);
+      }).toList();
     } catch (e) {
-      print('Arama yapılırken hata: $e');
-      throw Exception('Arama yapılırken bir hata oluştu');
+      print('Tur arama hatası: $e');
+      return [];
     }
   }
 
@@ -101,9 +84,13 @@ class SearchService {
       for (var doc in userReservations.docs) {
         final tripId = doc.data()['tripId'];
         final tripDoc = await _firestore.collection('trips').doc(tripId).get();
-        if (tripDoc.exists) {
-          final categories = List<String>.from(tripDoc.data()?['categories'] ?? []);
-          preferredCategories.addAll(categories);
+        if (tripDoc.exists && tripDoc.data() != null) {
+          final data = tripDoc.data()!;
+          if (data.containsKey('categories')) {
+            final categoriesData = data['categories'] as List<dynamic>?;
+          final categories = categoriesData?.map((e) => e.toString()).toList() ?? <String>[];
+            preferredCategories.addAll(categories);
+          }
         }
       }
 

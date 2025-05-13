@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class AppUser {
   final String id;
   final String email;
@@ -25,7 +27,7 @@ class AppUser {
       role: data['role'] ?? 'user',
       phone: data['phone'] ?? '',
       createdAt: data['createdAt'] != null 
-          ? (data['createdAt'] as DateTime) 
+          ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       favorites: List<String>.from(data['favorites'] ?? []),
     );

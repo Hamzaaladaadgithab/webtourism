@@ -26,10 +26,28 @@ class _EditTourScreenState extends State<EditTourScreen> {
   String _selectedType = '';
   String _selectedSeason = '';
   List<String> _selectedCategories = [];
+  List<String> _selectedActivities = [];
+  bool _isFamilyFriendly = false;
+  int _capacity = 0;
+  String _program = '';
 
   @override
   void initState() {
     super.initState();
+    // Mevcut verileri controller'lara yükle
+    _titleController.text = widget.trip.title;
+    _descriptionController.text = widget.trip.description;
+    _locationController.text = widget.trip.location;
+    _priceController.text = widget.trip.price.toString();
+    _durationController.text = widget.trip.duration.toString();
+    _imageUrlController.text = widget.trip.imageUrl;
+    _selectedCategories = List<String>.from(widget.trip.categories);
+    _selectedActivities = List<String>.from(widget.trip.activities);
+    _selectedSeason = widget.trip.season;
+    _selectedType = widget.trip.type;
+    _isFamilyFriendly = widget.trip.isFamilyFriendly;
+    _capacity = widget.trip.capacity;
+    _program = widget.trip.program;
     _titleController = TextEditingController(text: widget.trip.title);
     _descriptionController = TextEditingController(text: widget.trip.description);
     _locationController = TextEditingController(text: widget.trip.location);
@@ -124,6 +142,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         labelText: 'Tur Adı',
                         border: OutlineInputBorder(),
                       ),
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Lütfen tur adını girin';
@@ -139,6 +158,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         border: OutlineInputBorder(),
                       ),
                       maxLines: 3,
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Lütfen açıklama girin';
@@ -153,6 +173,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         labelText: 'Konum',
                         border: OutlineInputBorder(),
                       ),
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Lütfen konum girin';
@@ -168,6 +189,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Lütfen fiyat girin';
@@ -186,6 +208,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Lütfen süre girin';
@@ -199,6 +222,8 @@ class _EditTourScreenState extends State<EditTourScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _imageUrlController,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _updateTour(),
                       decoration: const InputDecoration(
                         labelText: 'Resim URL',
                         border: OutlineInputBorder(),

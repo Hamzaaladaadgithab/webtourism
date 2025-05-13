@@ -54,6 +54,25 @@ class ReservationService {
         .update(reservation.toFirestore());
   }
 
+  // Rezervasyon iptal et
+  Future<void> cancelReservation(String reservationId) async {
+    // Önce rezervasyonu iptal olarak işaretle
+    await _firestore
+        .collection('reservations')
+        .doc(reservationId)
+        .update({
+          'status': ReservationStatus.cancelled.toString(),
+          'cancelledAt': FieldValue.serverTimestamp(),
+        });
+
+    // 30 saniye sonra rezervasyonu sil
+    await Future.delayed(const Duration(seconds: 30));
+    await _firestore
+        .collection('reservations')
+        .doc(reservationId)
+        .delete();
+  }
+
   // Rezervasyon durumunu güncelle (admin için)
   Future<void> updateReservationStatus({
     required String reservationId,
@@ -180,34 +199,5 @@ class ReservationService {
     }
 
     return true;
-  }
-
-  // Rezervasyon iptal et
-  Future<void> cancelReservation(String reservationId) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw Exception('Kullanıcı girişi yapılmamış');
-    }
-
-    final docRef = _firestore.collection('reservations').doc(reservationId);
-    final doc = await docRef.get();
-
-    if (!doc.exists) {
-      throw Exception('Rezervasyon bulunamadı');
-    }
-
-    final reservation = Reservation.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
-    if (reservation.userId != user.uid) {
-      throw Exception('Bu rezervasyonu iptal etme yetkiniz yok');
-    }
-
-    if (reservation.status != ReservationStatus.pending) {
-      throw Exception('Sadece bekleyen rezervasyonlar iptal edilebilir');
-    }
-
-    await docRef.update({
-      'status': ReservationStatus.cancelled.toString().split('.').last,
-      'cancelledAt': FieldValue.serverTimestamp(),
-    });
   }
 }
