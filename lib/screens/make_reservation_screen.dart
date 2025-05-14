@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../services/reservation_service.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive_helper.dart';
 
 class MakeReservationScreen extends StatefulWidget {
   final Trip trip;
@@ -102,15 +103,27 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Ödeme Bilgileri'),
+          title: Text(
+            'Ödeme Bilgileri',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 20),
+              fontWeight: FontWeight.bold
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Kart Numarası',
                     hintText: '1234 5678 9012 3456',
+                    labelStyle: TextStyle(
+                      fontSize: ResponsiveHelper.getFontSize(context, 16)
+                    ),
+                    hintStyle: TextStyle(
+                      fontSize: ResponsiveHelper.getFontSize(context, 14)
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                   maxLength: 16,
@@ -119,9 +132,15 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Son Kullanma',
                           hintText: 'AA/YY',
+                          labelStyle: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 16)
+                          ),
+                          hintStyle: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 14)
+                          ),
                         ),
                         keyboardType: TextInputType.number,
                         maxLength: 5,
@@ -130,9 +149,15 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: TextFormField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'CVV',
                           hintText: '123',
+                          labelStyle: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 16)
+                          ),
+                          hintStyle: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 14)
+                          ),
                         ),
                         keyboardType: TextInputType.number,
                         maxLength: 3,
@@ -146,11 +171,21 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('İptal'),
+              child: Text(
+                'İptal',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getFontSize(context, 16)
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Ödemeyi Tamamla'),
+              child: Text(
+                'Ödemeyi Tamamla',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getFontSize(context, 16)
+                ),
+              ),
             ),
           ],
         );
@@ -207,358 +242,341 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Rezervasyon Yap',
-          style: TextStyle(
+        backgroundColor: Colors.blue.shade900,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '${widget.trip.title} - Rezervasyon',
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.blue,
-        elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.withOpacity(0.1),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Gezi Bilgileri
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.trip.title,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: SingleChildScrollView(
+                padding: ResponsiveHelper.getPadding(context),
+                child: Container(
+                  width: ResponsiveHelper.getMaxWidth(context) * 0.7,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tur Bilgileri
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Kişi Başı: ${widget.trip.price} TL',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Kişisel Bilgiler
-                  const Text(
-                    'Kişisel Bilgiler',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Ad Soyad',
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.blue),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Ad Soyad gerekli';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: InputDecoration(
-                      labelText: 'Telefon',
-                      prefixIcon: const Icon(Icons.phone),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.blue),
-                      ),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Telefon numarası gerekli';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Tarih Seçimi
-                  const Text(
-                    'Tarih Seçimi',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: () => _selectDateRange(context),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Colors.blue),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Başlangıç',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
-                                    ),
+                          child: Padding(
+                            padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.trip.title,
+                                  style: TextStyle(
+                                    fontSize: ResponsiveHelper.getFontSize(context, 24),
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    DateFormat('d MMMM y', 'tr_TR').format(_startDate),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward, color: Colors.grey),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Bitiş',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    DateFormat('d MMMM y', 'tr_TR').format(_endDate),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Kişi Sayısı
-                  const Text(
-                    'Kişi Sayısı',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Kişi Sayısı',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: _numberOfPeople > 1
-                                    ? () => setState(() => _numberOfPeople--)
-                                    : null,
-                                color: _numberOfPeople > 1 ? Colors.blue : Colors.grey,
-                              ),
-                              Text(
-                                '$_numberOfPeople',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add_circle_outline),
-                                onPressed: () => setState(() => _numberOfPeople++),
-                                color: Colors.blue,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Notlar
-                  const Text(
-                    'Notlar',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _notesController,
-                    decoration: InputDecoration(
-                      labelText: 'Eklemek istediğiniz notlar',
-                      prefixIcon: const Icon(Icons.note),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.blue),
-                      ),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Toplam Fiyat
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Toplam Tutar',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
+                                SizedBox(height: ResponsiveHelper.getFontSize(context, 8)),
+                                Text(
+                                  'Fiyat: ₺${widget.trip.price}',
+                                  style: TextStyle(
+                                    fontSize: ResponsiveHelper.getFontSize(context, 16),
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            '${_totalPrice.toStringAsFixed(2)} TL',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Rezervasyon Butonu
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _makeReservation,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Rezervasyonu Tamamla',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
+
+                        // Kişisel Bilgiler
+                        Text(
+                          'Kişisel Bilgiler',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 20),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Ad Soyad',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            labelStyle: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ad Soyad gerekli';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+                        TextFormField(
+                          controller: _phoneController,
+                          decoration: InputDecoration(
+                            labelText: 'Telefon',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            labelStyle: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                            ),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Telefon numarası gerekli';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
+
+                        // Tarih Seçimi
+                        Text(
+                          'Tarih Seçimi',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 20),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: () => _selectDateRange(context),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_today, color: Colors.blue),
+                                  SizedBox(width: ResponsiveHelper.getFontSize(context, 12)),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Başlangıç',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        SizedBox(height: ResponsiveHelper.getFontSize(context, 4)),
+                                        Text(
+                                          DateFormat('d MMMM y', 'tr_TR').format(_startDate),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.arrow_forward, color: Colors.grey),
+                                  SizedBox(width: ResponsiveHelper.getFontSize(context, 12)),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Bitiş',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        SizedBox(height: ResponsiveHelper.getFontSize(context, 4)),
+                                        Text(
+                                          DateFormat('d MMMM y', 'tr_TR').format(_endDate),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
+
+                        // Kişi Sayısı
+                        Text(
+                          'Kişi Sayısı',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 20),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Kişi Sayısı',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline),
+                                      onPressed: _numberOfPeople > 1
+                                          ? () => setState(() => _numberOfPeople--)
+                                          : null,
+                                      color: _numberOfPeople > 1 ? Colors.blue : Colors.grey,
+                                    ),
+                                    Text(
+                                      '$_numberOfPeople',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle_outline),
+                                      onPressed: () => setState(() => _numberOfPeople++),
+                                      color: Colors.blue,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
+
+                        // Notlar
+                        Text(
+                          'Notlar',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 20),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+                        TextFormField(
+                          controller: _notesController,
+                          decoration: InputDecoration(
+                            labelText: 'Eklemek istediğiniz notlar',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            labelStyle: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                            ),
+                          ),
+                          maxLines: 3,
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 32)),
+
+                        // Toplam Fiyat
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Toplam Tutar',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Text(
+                                  '${_totalPrice.toStringAsFixed(2)} TL',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
+
+                        // Rezervasyon Butonu
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _makeReservation,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade900,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : Text(
+                                    'Rezervasyonu Onayla - ${_totalPrice.toStringAsFixed(2)} TL',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+        );
+      } 
+    }
+  

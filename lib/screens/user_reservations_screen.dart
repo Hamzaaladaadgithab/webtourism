@@ -4,6 +4,7 @@ import '../models/reservation.dart';
 import '../services/reservation_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/reservation_card.dart';
+import '../utils/responsive_helper.dart';
 
 class UserReservationsScreen extends StatefulWidget {
   const UserReservationsScreen({Key? key}) : super(key: key);
@@ -106,21 +107,39 @@ class _UserReservationsScreenState extends State<UserReservationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
-            const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.error_outline,
+              size: ResponsiveHelper.getFontSize(context, 48),
+              color: Colors.red.shade300
+            ),
+            SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+            Text(
+              _error!,
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 16),
+                color: Colors.red
+              )
+            ),
+            SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
             ElevatedButton(
               onPressed: _loadUserId,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveHelper.getFontSize(context, 32),
+                  vertical: ResponsiveHelper.getFontSize(context, 16)
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Tekrar Dene'),
+              child: Text(
+                'Tekrar Dene',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getFontSize(context, 16)
+                ),
+              ),
             ),
           ],
         ),
@@ -132,12 +151,16 @@ class _UserReservationsScreenState extends State<UserReservationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person_outline, size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(
+              Icons.person_outline,
+              size: ResponsiveHelper.getFontSize(context, 48),
+              color: Colors.grey.shade300
+            ),
+            SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+            Text(
               'Lütfen giriş yapın',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: ResponsiveHelper.getFontSize(context, 18),
                 color: Colors.grey,
               ),
             ),
@@ -154,11 +177,18 @@ class _UserReservationsScreenState extends State<UserReservationsScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
-                const SizedBox(height: 16),
+                Icon(
+                  Icons.error_outline,
+                  size: ResponsiveHelper.getFontSize(context, 48),
+                  color: Colors.red.shade300
+                ),
+                SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
                 Text(
                   'Hata: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getFontSize(context, 16),
+                    color: Colors.red
+                  ),
                 ),
               ],
             ),
@@ -176,12 +206,16 @@ class _UserReservationsScreenState extends State<UserReservationsScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.calendar_today, size: 48, color: Colors.grey.shade300),
-                const SizedBox(height: 16),
-                const Text(
+                Icon(
+                  Icons.calendar_today,
+                  size: ResponsiveHelper.getFontSize(context, 48),
+                  color: Colors.grey.shade300
+                ),
+                SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
+                Text(
                   'Henüz rezervasyonunuz bulunmuyor',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: ResponsiveHelper.getFontSize(context, 18),
                     color: Colors.grey,
                   ),
                 ),

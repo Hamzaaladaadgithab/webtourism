@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../services/admin_service.dart';
+import '../utils/responsive_helper.dart';
 
 class EditTourScreen extends StatefulWidget {
   final Trip trip;
@@ -95,6 +96,9 @@ class _EditTourScreenState extends State<EditTourScreen> {
         capacity: widget.trip.capacity,
         status: widget.trip.status,
         isFamilyFriendly: widget.trip.isFamilyFriendly,
+        createdAt: widget.trip.createdAt,
+        groupSize: widget.trip.groupSize,
+        difficulty: widget.trip.difficulty,
       );
 
       await _adminService.updateTrip(updatedTrip);
@@ -125,12 +129,20 @@ class _EditTourScreenState extends State<EditTourScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tur Düzenle'),
+        title: Text(
+          'Gezi Düzenle',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.blue.shade900,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveHelper.getPadding(context),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -153,9 +165,13 @@ class _EditTourScreenState extends State<EditTourScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descriptionController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Açıklama',
-                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveHelper.getFontSize(context, 16),
+                          vertical: ResponsiveHelper.getFontSize(context, 12),
+                        ),
+                        border: const OutlineInputBorder(),
                       ),
                       maxLines: 3,
                       textInputAction: TextInputAction.next,
@@ -278,10 +294,10 @@ class _EditTourScreenState extends State<EditTourScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Kategoriler',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: ResponsiveHelper.getFontSize(context, 16),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

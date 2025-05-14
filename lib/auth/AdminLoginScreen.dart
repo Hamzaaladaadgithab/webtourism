@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../admin/admin_home_screen.dart';
-import 'adminSignUpScreen.dart';
+
+import '../utils/responsive_helper.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   static const routeName = '/admin-login';
@@ -22,18 +24,52 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      // Admin girişi yap
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
+
+      // Admins tablosundan kontrol et
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(email)
+          .get();
+
+      if (!adminDoc.exists) {
+        await FirebaseAuth.instance.signOut();
+        throw FirebaseAuthException(code: 'user-not-found');
+      }
+
+      // Admin durumunu kontrol et
+      final adminData = adminDoc.data() as Map<String, dynamic>;
+      if (adminData['status'] != 'active') {
+        await FirebaseAuth.instance.signOut();
+        throw FirebaseAuthException(code: 'user-disabled');
+      }
+
+      // Login bilgilerini güncelle
+      await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(email)
+          .update({
+        'metadata.lastLogin': DateTime.now().toIso8601String(),
+        'securitySettings.loginAttempts': 0
+      });
+
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(AdminHomeScreen.routeName);
     } catch (error) {
       var message = 'Bir hata oluştu!';
       if (error.toString().contains('user-not-found')) {
-        message = 'Kullanıcı bulunamadı!';
+        message = 'Admin hesabı bulunamadı!';
       } else if (error.toString().contains('wrong-password')) {
         message = 'Yanlış şifre!';
+      } else if (error.toString().contains('user-disabled')) {
+        message = 'Admin hesabı devre dışı!';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -50,12 +86,22 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Şifremi Unuttum'),
+        title: Text(
+          'Şifremi Unuttum',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: TextField(
           controller: emailController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'E-posta',
             border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: ResponsiveHelper.getFontSize(context, 16),
+              vertical: ResponsiveHelper.getFontSize(context, 12),
+            ),
           ),
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
@@ -85,7 +131,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('İptal'),
+            child: Text(
+              'İptal',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 14),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -121,11 +172,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Admin Girişi',
           style: TextStyle(
-            color: Colors.white,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         backgroundColor: Colors.blue.shade900,
@@ -208,10 +260,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             ),
                             child: _isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
+                                : Text(
                                     'GİRİŞ YAP',
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: ResponsiveHelper.getFontSize(context, 16),
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -219,12 +271,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 15),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pushNamed(AdminSignUpScreen.routeName);
-                          },
-                          child: const Text('Hesabınız yok mu? Kayıt olun'),
-                        ),
                       ],
                     ),
                   ),

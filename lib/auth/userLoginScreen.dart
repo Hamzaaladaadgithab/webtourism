@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/tabs_screen.dart';
 import 'userSignUpScreen.dart';
+import '../utils/responsive_helper.dart';
 
 class UserLoginScreen extends StatefulWidget {
   static const routeName = '/user-login';
@@ -73,12 +74,22 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Şifremi Unuttum'),
+        title: Text(
+          'Şifremi Unuttum',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: TextField(
           controller: emailController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'E-posta',
             border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: ResponsiveHelper.getFontSize(context, 16),
+              vertical: ResponsiveHelper.getFontSize(context, 12),
+            ),
           ),
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
@@ -144,11 +155,12 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Kullanıcı Girişi',
+        title: Text(
+          'Giriş Yap',
           style: TextStyle(
-            color: Colors.white,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         backgroundColor: Colors.blue.shade900,
@@ -166,7 +178,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 20)),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -174,10 +186,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       children: [
                         TextFormField(
                           controller: _emailController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'E-posta',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.email),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveHelper.getFontSize(context, 16),
+                              vertical: ResponsiveHelper.getFontSize(context, 12),
+                            ),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
@@ -194,10 +210,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                         const SizedBox(height: 15),
                         TextFormField(
                           controller: _passwordController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Şifre',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.lock),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveHelper.getFontSize(context, 16),
+                              vertical: ResponsiveHelper.getFontSize(context, 12),
+                            ),
                           ),
                           obscureText: true,
                           textInputAction: TextInputAction.done,
@@ -215,7 +235,12 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                         const SizedBox(height: 20),
                         TextButton(
                           onPressed: _showForgotPasswordDialog,
-                          child: const Text('Şifremi Unuttum'),
+                          child: Text(
+                            'Şifremi Unuttum',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 14),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 10),
                         SizedBox(
@@ -231,10 +256,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                             ),
                             child: _isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
+                                : Text(
                                     'GİRİŞ YAP',
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: ResponsiveHelper.getFontSize(context, 18),
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -246,7 +271,12 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                           onPressed: () {
                             Navigator.of(context).pushNamed(UserSignUpScreen.routeName);
                           },
-                          child: const Text('Hesabınız yok mu? Kayıt olun'),
+                          child: Text(
+                            'Hesabınız yok mu? Kayıt olun',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 14),
+                            ),
+                          ),
                         ),
                       ],
                     ),

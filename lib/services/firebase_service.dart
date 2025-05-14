@@ -91,6 +91,9 @@ class FirebaseService {
         'capacity': trip.capacity,
         'status': trip.status,
         'isFamilyFriendly': trip.isFamilyFriendly,
+        'createdAt': trip.createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        'groupSize': trip.groupSize,
+        'difficulty': trip.difficulty,
       });
       print('Trip added successfully!');
     } catch (e) {
@@ -136,6 +139,9 @@ class FirebaseService {
           capacity: data['capacity'] ?? 10,
           status: data['status'] ?? 'active',
           isFamilyFriendly: data['isFamilyFriendly'] ?? false,
+          createdAt: data['createdAt'] != null ? DateTime.parse(data['createdAt'] as String) : DateTime.now(),
+          groupSize: data['groupSize'] ?? 10,
+          difficulty: data['difficulty'] ?? 'Orta',
         );
       }).toList();
     });

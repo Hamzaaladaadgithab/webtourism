@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../auth/userLoginScreen.dart';
@@ -23,385 +22,251 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
   Set<String> _favorites = {};
+  late Future<Trip?> _tripFuture;
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
+    _tripFuture = _loadTripData();
   }
 
   Future<void> _loadFavorites() async {
     try {
-      final user = await _authService.getCurrentUser();
-      if (user != null) {
-        final favorites = await _userService.getUserFavorites(user.uid).first;
-        setState(() {
-          _favorites = Set.from(favorites);
-        });
-      }
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) return;
+      
+      final userDoc = await _userService.getUser(currentUser.uid);
+      if (!mounted) return;
+      
+      final favorites = userDoc?.favorites ?? [];
+      setState(() {
+        _favorites = Set<String>.from(favorites);
+      });
     } catch (e) {
-      print('Error loading favorites: $e');
+      debugPrint('Error loading favorites: $e');
     }
   }
 
-  Future<void> _toggleFavorite() async {
-    try {
-      final user = await _authService.getCurrentUser();
-      if (user == null) {
-        // Kullanıcı giriş yapmamışsa, giriş sayfasına yönlendir
-        if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => UserLoginScreen()),
-        );
-        return;
+  Future<void> _toggleFavorite(String tripId) async {
+    final currentUser = await _authService.getCurrentUser();
+    if (currentUser == null) {
+      if (mounted) {
+        Navigator.of(context).pushNamed(UserLoginScreen.routeName);
       }
+      return;
+    }
 
-      // Kullanıcı bilgilerini kontrol et
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+    if (mounted) {
+      setState(() {
+        if (_favorites.contains(tripId)) {
+          _favorites.remove(tripId);
+          _userService.updateUser(currentUser.uid, {
+            'favorites': FieldValue.arrayRemove([tripId])
+          });
+        } else {
+          _favorites.add(tripId);
+          _userService.updateUser(currentUser.uid, {
+            'favorites': FieldValue.arrayUnion([tripId])
+          });
+        }
+      });
+    }
+  }
 
-      if (!userDoc.exists) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kullanıcı bilgileri bulunamadı. Lütfen tekrar giriş yapın.'),
-            backgroundColor: Colors.red,
+  Widget _buildDetailRow(String label, String value, IconData icon) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideScreen = constraints.maxWidth > 600;
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 12.0,
+            horizontal: 16.0,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: Colors.blue.shade900,
+                size: isWideScreen ? 28 : 24,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: isWideScreen ? 16 : 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: isWideScreen ? 18 : 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
-        return;
-      }
-
-      // Favori durumunu güncelle
-      if (_favorites.contains(widget.trip.id)) {
-        await _userService.removeFromFavorites(user.uid, widget.trip.id);
-        if (!mounted) return;
-        setState(() {
-          _favorites.remove(widget.trip.id);
-        });
-      } else {
-        await _userService.addToFavorites(user.uid, widget.trip.id);
-        if (!mounted) return;
-        setState(() {
-          _favorites.add(widget.trip.id);
-        });
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_favorites.contains(widget.trip.id)
-              ? 'Favorilere eklendi'
-              : 'Favorilerden çıkarıldı'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hata: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+      },
+    );
   }
 
-  String _getMonthName(int month) {
-    const months = [
-      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-    ];
-    return months[month - 1];
+  Future<Trip?> _loadTripData() async {
+    try {
+      final tripDoc = await FirebaseFirestore.instance
+          .collection('trips')
+          .doc(widget.trip.id)
+          .get();
+      
+      if (!tripDoc.exists) {
+        return null;
+      }
+      return Trip.fromFirestore(tripDoc.id, tripDoc.data() as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Error loading trip data: $e');
+      return null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    widget.trip.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black54,
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              title: Text(
-                widget.trip.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  _favorites.contains(widget.trip.id)
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  color: Colors.white,
-                ),
-                onPressed: _toggleFavorite,
-              ),
-            ],
+      appBar: AppBar(
+        backgroundColor: Colors.blue.shade900,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          widget.trip.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
-          SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.blue.withOpacity(0.1),
-                    Colors.white,
-                  ],
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Fiyat Kartı
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Tur Fiyatı',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${widget.trip.price.toStringAsFixed(2)} TL',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                final user = await _authService.getCurrentUser();
-                                if (user == null) {
-                                  Navigator.of(context).pushNamed(UserLoginScreen.routeName);
-                                  return;
-                                }
-                                Navigator.of(context).pushNamed(
-                                  '/make-reservation',
-                                  arguments: widget.trip,
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Rezervasyon Yap',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Detaylar
-                    const Text(
-                      'Tur Detayları',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            _buildDetailRow(
-                              'Konum',
-                              widget.trip.location,
-                              Icons.location_on,
-                              Colors.red,
-                            ),
-                            const Divider(),
-                            _buildDetailRow(
-                              'Başlangıç',
-                              '${widget.trip.startDate.day} ${_getMonthName(widget.trip.startDate.month)} ${widget.trip.startDate.year}',
-                              Icons.calendar_today,
-                              Colors.blue,
-                            ),
-                            const Divider(),
-                            _buildDetailRow(
-                              'Bitiş',
-                              '${widget.trip.endDate.day} ${_getMonthName(widget.trip.endDate.month)} ${widget.trip.endDate.year}',
-                              Icons.calendar_today,
-                              Colors.blue,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Açıklama
-                    const Text(
-                      'Tur Açıklaması',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          widget.trip.description,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Aktiviteler
-                    if (widget.trip.activities != null && widget.trip.activities!.isNotEmpty) ...[
-                      const Text(
-                        'Aktiviteler',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: widget.trip.activities!.length,
-                          separatorBuilder: (context, index) => const Divider(),
-                          itemBuilder: (context, index) {
-                            final activity = widget.trip.activities![index];
-                            return ListTile(
-                              leading: const Icon(Icons.star, color: Colors.amber),
-                              title: Text(activity),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _favorites.contains(widget.trip.id)
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              color: Colors.white,
             ),
+            onPressed: () => _toggleFavorite(widget.trip.id),
           ),
         ],
       ),
-    );
-  }
+      body: FutureBuilder<Trip?>(
+        future: _tripFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-  Widget _buildDetailRow(String label, String value, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          }
+
+          final trip = snapshot.data ?? widget.trip;
+
+          return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                if (trip.imageUrl.isNotEmpty)
+                  Image.network(
+                    trip.imageUrl.startsWith('http') ? trip.imageUrl : 'https://images.unsplash.com/photo-1605540436563-5bca919ae766?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MXx8c2tpaW5nfGVufDB8fDB8&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.error_outline, size: 40),
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow('Konum', trip.location, Icons.location_on),
+                      _buildDetailRow('Süre', '${trip.duration} gün', Icons.timer),
+                      _buildDetailRow('Grup Boyutu', '${trip.groupSize} kişi', Icons.group),
+                      _buildDetailRow('Zorluk', trip.difficulty, Icons.trending_up),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Açıklama',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(trip.description),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Aktiviteler',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: trip.activities.map((activity) => Chip(
+                          label: Text(activity),
+                          backgroundColor: Colors.blue.shade100,
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 20),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pushNamed(
+                              '/make-reservation',
+                              arguments: trip,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade900,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            'Rezervasyon Yap - ${trip.price.toStringAsFixed(2)} TL',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+
 }

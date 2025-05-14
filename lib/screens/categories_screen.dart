@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/data_service.dart';
 import '../widgets/category_item.dart';
 import '../models/category.dart';
+import '../utils/responsive_helper.dart';
 
 class CategoriesScreen extends StatefulWidget {
   final bool showAppBar;
@@ -16,37 +17,31 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   final DataService _dataService = DataService();
 
 
-  // Ekran boyutları için sabitler
-  static const double tabletBreakpoint = 768;
-  static const double desktopBreakpoint = 1024;
-
   @override   
   void initState() {
     super.initState();
   }
 
   // Ekran genişliğine göre grid kolonlarını hesapla
-  int _calculateCrossAxisCount(double width) {
-    if (width >= desktopBreakpoint) {
-      return 3; // Desktop: 3 kolon
-    } else if (width >= tabletBreakpoint) {
-      return 2; // Tablet: 2 kolon
+  int _calculateCrossAxisCount(BuildContext context) {
+    if (ResponsiveHelper.isDesktop(context)) {
+      return 4; // Desktop: 4 kolon
+    } else if (ResponsiveHelper.isTablet(context)) {
+      return 3; // Tablet: 3 kolon
     }
-    return 1; // Mobil: 1 kolon
+    return 2; // Mobil: 2 kolon
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       appBar: widget.showAppBar
           ? AppBar(
-              title: const Text(
+              title: Text(
                 'Kategoriler',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: ResponsiveHelper.getFontSize(context, 20),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -63,11 +58,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  SizedBox(height: 16),
+                  Icon(Icons.error_outline, 
+                       size: ResponsiveHelper.getFontSize(context, 48), 
+                       color: Colors.red),
+                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
                   Text(
                     'Veriler yüklenirken bir hata oluştu',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getFontSize(context, 16)
+                    ),
                   ),
                 ],
               ),
@@ -85,11 +84,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.category_outlined, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
+                  Icon(Icons.category_outlined, 
+                       size: ResponsiveHelper.getFontSize(context, 48), 
+                       color: Colors.grey),
+                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
                   Text(
                     'Henüz kategori eklenmemiş',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getFontSize(context, 16)
+                    ),
                   ),
                 ],
               ),
@@ -97,7 +100,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           }
 
           final categories = snapshot.data!;
-          final crossAxisCount = _calculateCrossAxisCount(screenWidth);
+          final crossAxisCount = _calculateCrossAxisCount(context);
           
           return Center(
             child: Container(

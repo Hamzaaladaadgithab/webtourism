@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../services/reservation_service.dart';
 import '../models/reservation.dart';
 import '../services/admin_service.dart';
+import '../utils/responsive_helper.dart';
 
 class ManageReservationsScreen extends StatefulWidget {
   static const routeName = '/manage-reservations';
@@ -62,7 +63,13 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
     ReservationStatus? newStatus = await showDialog<ReservationStatus>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rezervasyon Durumunu Güncelle'),
+        title: Text(
+          'Rezervasyon Durumunu Güncelle',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -82,17 +89,34 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                       title: const Text('İptal Nedeni'),
                       content: TextField(
                         onChanged: (value) => reason = value,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'İptal nedenini giriniz',
+                          hintStyle: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 14)
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveHelper.getFontSize(context, 16),
+                            vertical: ResponsiveHelper.getFontSize(context, 12)
+                          ),
                         ),
                       ),
                       actions: [
                         TextButton(
-                          child: const Text('İptal'),
+                          child: Text(
+                            'İptal',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 14)
+                            ),
+                          ),
                           onPressed: () => Navigator.of(ctx).pop(),
                         ),
                         TextButton(
-                          child: const Text('Tamam'),
+                          child: Text(
+                            'Tamam',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 14)
+                            ),
+                          ),
                           onPressed: () {
                             Navigator.of(ctx).pop();
                             Navigator.of(context).pop(value);
@@ -161,11 +185,12 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Rezervasyonları Yönet',
           style: TextStyle(
-            color: Colors.white,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         backgroundColor: Colors.blue.shade900,
@@ -210,7 +235,7 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
                     Row(
                       children: [
                         Expanded(
@@ -267,11 +292,11 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
                         'Rezervasyon bulunamadı.',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: ResponsiveHelper.getFontSize(context, 14),
                           color: Colors.grey,
                         ),
                       ),
@@ -279,7 +304,7 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final reservation = snapshot.data![index];
@@ -293,8 +318,8 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                           contentPadding: const EdgeInsets.all(16),
                           title: Text(
                             reservation.tripTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
                               fontWeight: FontWeight.bold,
                             ),
                           ),

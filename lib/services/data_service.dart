@@ -218,6 +218,9 @@ class DataService {
               (e) => e.toString().split('.').last == data['status'],
               orElse: () => TripStatus.AVAILABLE,
             ),
+            createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
+            groupSize: data['groupSize'] ?? 1,
+            difficulty: data['difficulty'] ?? 'Orta',
           );
         }).toList();
       });
@@ -294,6 +297,9 @@ class DataService {
             (e) => e.toString().split('.').last == data['status'],
             orElse: () => TripStatus.AVAILABLE,
           ),
+          createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
+          groupSize: data['groupSize'] ?? 10,
+          difficulty: data['difficulty'] ?? 'Orta',
         );
       }).toList();
     } catch (e) {
@@ -358,6 +364,9 @@ class DataService {
             (e) => e.toString().split('.').last == data['status'],
             orElse: () => TripStatus.AVAILABLE,
           ),
+          createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
+          groupSize: data['groupSize'] ?? 10,
+          difficulty: data['difficulty'] ?? 'Orta',
         );
       }).toList();
     });
@@ -389,6 +398,9 @@ class DataService {
             (e) => e.toString().split('.').last == data['status'],
             orElse: () => TripStatus.AVAILABLE,
           ),
+          createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
+          groupSize: data['groupSize'] ?? 10,
+          difficulty: data['difficulty'] ?? 'Orta',
         );
       }).toList();
     });
@@ -407,9 +419,12 @@ class DataService {
         description: data['description'] ?? '',
         imageUrl: data['imageUrl'] ?? '',
         price: (data['price'] ?? 0).toDouble(),
+        groupSize: data['groupSize'] ?? 1,
+        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         duration: data['duration'] ?? 1,
         location: data['location'] ?? '',
         startDate: (data['startDate'] as Timestamp).toDate(),
+        difficulty: data['difficulty'] ?? 'Easy',
         endDate: (data['endDate'] as Timestamp).toDate(),
         season: data['season'] ?? 'SUMMER',
         type: data['type'] ?? 'CULTURAL',

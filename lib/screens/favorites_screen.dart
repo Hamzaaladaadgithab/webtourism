@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../services/favorite_service.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive_helper.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -43,7 +44,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildTripCard(Trip trip) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        vertical: ResponsiveHelper.getFontSize(context, 8),
+        horizontal: ResponsiveHelper.getFontSize(context, 16)
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -55,7 +59,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               fit: BoxFit.cover,
             ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -64,8 +68,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     Expanded(
                       child: Text(
                         trip.title,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getFontSize(context, 18),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -89,9 +93,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Konum',
                           style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 14),
                             color: Colors.grey,
                           ),
                         ),
@@ -106,9 +111,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'Fiyat',
                           style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 14),
                             color: Colors.grey,
                           ),
                         ),

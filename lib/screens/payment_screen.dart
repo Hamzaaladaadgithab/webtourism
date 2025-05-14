@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/reservation.dart';
 import '../services/payment_service.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive_helper.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Reservation reservation;
@@ -311,7 +312,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                   validator: _validateName,
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: ResponsiveHelper.getFontSize(context, 32)),
 
                 if (_error != null)
                   Container(

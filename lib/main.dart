@@ -14,7 +14,6 @@ import 'screens/WelcomeScreen.dart';
 import 'auth/userLoginScreen.dart';
 import 'auth/userSignUpScreen.dart';
 import 'auth/AdminLoginScreen.dart';
-import 'auth/adminSignUpScreen.dart';
 import 'admin/admin_home_screen.dart';
 import 'admin/add_tour_screen.dart';
 import 'admin/manage_tours_screen.dart';
@@ -101,12 +100,24 @@ class _MyAppState extends State<MyApp> {
         UserLoginScreen.routeName: (ctx) => UserLoginScreen(),
         UserSignUpScreen.routeName: (ctx) => UserSignUpScreen(),
         AdminLoginScreen.routeName: (ctx) => AdminLoginScreen(),
-        AdminSignUpScreen.routeName: (ctx) => AdminSignUpScreen(),
         TabsScreen.routeName: (ctx) => TabsScreen(_favoriteTrips),
         CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(),
         TripDetailScreen.routeName: (context) {
-          final trip = ModalRoute.of(context)!.settings.arguments as Trip;
-          return TripDetailScreen(trip: trip);
+          final route = ModalRoute.of(context);
+          if (route == null) return const MaterialApp(home: Center(child: CircularProgressIndicator()));
+          
+          final args = route.settings.arguments;
+          if (args == null || args is! Trip) {
+            return MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: Text('Tur bilgisi bulunamadı'),
+                ),
+              ),
+            );
+          }
+          
+          return TripDetailScreen(trip: args);
         },
         AdminHomeScreen.routeName: (ctx) => AdminHomeScreen(),
         AddTourScreen.routeName: (ctx) => AddTourScreen(),

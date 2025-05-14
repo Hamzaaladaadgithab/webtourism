@@ -4,6 +4,7 @@ import '../models/trip.dart';
 import '../services/admin_service.dart';
 import 'edit_tour_screen.dart';
 import 'add_tour_screen.dart';
+import '../utils/responsive_helper.dart';
 
 class ManageToursScreen extends StatefulWidget {
   static const routeName = '/manage-tours';
@@ -20,11 +21,12 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Gezileri Yönet',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         backgroundColor: Colors.blue.shade900,
@@ -79,7 +81,7 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: ResponsiveHelper.getFontSize(context, 16)),
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _selectedType,
@@ -145,11 +147,12 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
                         'Bu kriterlere uygun gezi bulunamadı.',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: ResponsiveHelper.getFontSize(context, 16),
+                          fontWeight: FontWeight.bold,
                           color: Colors.grey,
                         ),
                       ),

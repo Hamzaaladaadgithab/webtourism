@@ -4,6 +4,7 @@ import '../services/search_service.dart';
 import '../widgets/trip_card.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../utils/responsive_helper.dart';
 
 const double kMaxPrice = 10000.0;
 
@@ -147,7 +148,14 @@ class _SearchScreenState extends State<SearchScreen> {
             controller: _searchController,
             decoration: InputDecoration(
               hintText: 'Tur ara...',
-              prefixIcon: const Icon(Icons.search, color: Colors.blue),
+              hintStyle: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 14)
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Colors.blue,
+                size: ResponsiveHelper.getFontSize(context, 24)
+              ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -178,15 +186,20 @@ class _SearchScreenState extends State<SearchScreen> {
                   });
                   _performSearch();
                 },
-                label: const Text('Tümü'),
+                label: Text(
+                'Tümü',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getFontSize(context, 14)
+                ),
+              ),
                 backgroundColor: Colors.white,
                 selectedColor: const Color(0x332196F3),
                 checkmarkColor: Colors.blue,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: ResponsiveHelper.getFontSize(context, 8)),
               ..._categories.map((category) {
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: EdgeInsets.only(right: ResponsiveHelper.getFontSize(context, 8)),
                   child: FilterChip(
                     selected: _selectedCategory == category,
                     onSelected: (selected) {
@@ -195,7 +208,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       });
                       _performSearch();
                     },
-                    label: Text(category),
+                    label: Text(
+                      category,
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getFontSize(context, 14)
+                      ),
+                    ),
                     backgroundColor: Colors.white,
                     selectedColor: const Color(0x332196F3),
                     checkmarkColor: Colors.blue,

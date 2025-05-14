@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../services/admin_service.dart';
+import '../utils/responsive_helper.dart';
 
 class AddTourScreen extends StatefulWidget {
   static const routeName = '/add-tour';
@@ -53,6 +54,8 @@ class _AddTourScreenState extends State<AddTourScreen> {
         isFamilyFriendly: false,
         status: TripStatus.AVAILABLE,
         createdAt: DateTime.now(),
+        groupSize: 10,
+        difficulty: 'Orta',
       );
 
       await FirebaseFirestore.instance.collection('trips').doc(trip.id).set(trip.toFirestore());
@@ -77,10 +80,11 @@ class _AddTourScreenState extends State<AddTourScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Yeni Gezi Ekle',
           style: TextStyle(
             color: Colors.white,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -99,7 +103,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 20)),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -225,7 +229,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             }
                           },
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: ResponsiveHelper.getFontSize(context, 20)),
                         SizedBox(
                           width: double.infinity,
                           height: 50,
@@ -239,12 +243,11 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             ),
                             child: _isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
+                                : Text(
                                     'GEZİ EKLE',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: ResponsiveHelper.getFontSize(context, 16),
                                       color: Colors.white,
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                           ),

@@ -24,6 +24,8 @@ class Trip {
   final int capacity;
   final TripStatus status;
   final DateTime? createdAt;
+  final int groupSize;
+  final String difficulty;
 
   Trip({
     required this.id,
@@ -38,48 +40,73 @@ class Trip {
     required this.season,
     required this.type,
     required this.isFamilyFriendly,
+    required this.createdAt,
+    required this.groupSize,
+    required this.difficulty,
     required this.categories,
     required this.activities,
     required this.program,
     required this.capacity,
     required this.status,
-    this.createdAt,
   });
 
   factory Trip.fromFirestore(String id, Map<String, dynamic> data) {
+    String parseString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is List) return value.join(', ');
+      return value.toString();
+    }
+
     List<String> convertToStringList(dynamic value) {
       if (value == null) return [];
+      if (value is String) return [value];
       if (value is List) {
-        return value.map((e) => e?.toString() ?? '').toList();
+        return value.map((item) => item?.toString() ?? '').where((item) => item.isNotEmpty).toList();
       }
       return [];
     }
 
+    int parseGroupSize(dynamic value) {
+      if (value == null) return 10;
+      if (value is int) return value;
+      if (value is String) {
+        return int.tryParse(value) ?? 10;
+      }
+      return 10;
+    }
+
+    String parseDifficulty(dynamic value) {
+      if (value == null) return 'Orta';
+      if (value is String) return value;
+      if (value is List) return value.isNotEmpty ? value.first.toString() : 'Orta';
+      return 'Orta';
+    }
+
     return Trip(
       id: id,
-      title: data['title']?.toString() ?? '',
-      description: data['description']?.toString() ?? '',
-      imageUrl: data['imageUrl']?.toString() ?? '',
-      price: (data['price'] ?? 0).toDouble(),
+      title: parseString(data['title']),
+      description: parseString(data['description']),
+      imageUrl: parseString(data['imageUrl']),
+      price: (data['price'] ?? 0.0).toDouble(),
       duration: data['duration'] ?? 0,
-      location: data['location']?.toString() ?? '',
-      startDate: data['startDate'] != null 
-          ? (data['startDate'] is Timestamp ? (data['startDate'] as Timestamp).toDate() : DateTime.fromMillisecondsSinceEpoch(0))
-          : DateTime.fromMillisecondsSinceEpoch(0),
-      endDate: data['endDate'] != null 
-          ? (data['endDate'] is Timestamp ? (data['endDate'] as Timestamp).toDate() : DateTime.fromMillisecondsSinceEpoch(86400000))
-          : DateTime.fromMillisecondsSinceEpoch(86400000),
-      season: data['season']?.toString() ?? 'summer',
-      type: data['type']?.toString() ?? 'individual',
+      location: parseString(data['location']),
+      startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      season: parseString(data['season']),
+      type: parseString(data['type']),
       isFamilyFriendly: data['isFamilyFriendly'] ?? false,
       categories: convertToStringList(data['categories']),
       activities: convertToStringList(data['activities']),
-      program: data['program']?.toString() ?? '',
+      program: parseString(data['program']),
       capacity: data['capacity'] ?? 0,
       status: TripStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == (data['status']?.toString() ?? ''),
+        (e) => e.toString() == 'TripStatus.${parseString(data['status']).toUpperCase()}',
         orElse: () => TripStatus.AVAILABLE,
       ),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      groupSize: parseGroupSize(data['groupSize']),
+      difficulty: parseDifficulty(data['difficulty']),
     );
   }
 
@@ -123,6 +150,9 @@ class Trip {
     String? program,
     int? capacity,
     TripStatus? status,
+    DateTime? createdAt,
+    int? groupSize,
+    String? difficulty,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -135,6 +165,9 @@ class Trip {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       season: season ?? this.season,
+      createdAt: createdAt ?? this.createdAt,
+      groupSize: groupSize ?? this.groupSize,
+      difficulty: difficulty ?? this.difficulty,
       type: type ?? this.type,
       isFamilyFriendly: isFamilyFriendly ?? this.isFamilyFriendly,
       categories: categories ?? this.categories,

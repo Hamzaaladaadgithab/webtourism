@@ -4,14 +4,9 @@ import '../services/data_service.dart';
 import '../widgets/trip_card.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive_helper.dart';
 
-// Web uyumluluğu için ekran boyutları sabitleri
-class ScreenSize {
-  // Tablet boyutu - 768px ve üzeri için grid görünümüne geçecek
-  static const double tablet = 768;
-  // Desktop boyutu - 1024px ve üzeri için daha geniş grid
-  static const double desktop = 1024;
-}
+
 
 class CategoryTripsScreen extends StatefulWidget {
   static const routeName = '/category-trips';
@@ -100,8 +95,9 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
       appBar: AppBar(
         title: Text(
           args['title'] as String,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -122,21 +118,19 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.error_outline,
-                    color: Colors.red,
-                    size: 60,
+                    size: ResponsiveHelper.getFontSize(context, 48),
+                    color: Colors.red
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
                   Text(
-                    'Bir hata oluştu: ${snapshot.error}',
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontSize: 16,
+                    'Veriler yüklenirken bir hata oluştu',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getFontSize(context, 16)
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
                       setState(() {});
@@ -149,21 +143,21 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.search_off,
                     color: Colors.grey,
-                    size: 60,
+                    size: ResponsiveHelper.getFontSize(context, 60),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
                   Text(
                     'Bu kategoride gezi bulunamadı',
                     style: TextStyle(
                       color: Colors.grey,
-                      fontSize: 16,
+                      fontSize: ResponsiveHelper.getFontSize(context, 16),
                     ),
                   ),
                 ],
@@ -176,7 +170,7 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
           return LayoutBuilder(
             builder: (context, constraints) {
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: ResponsiveHelper.getPadding(context),
                 itemCount: trips.length,
                 itemBuilder: (context, index) {
                   final trip = trips[index];

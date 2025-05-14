@@ -7,6 +7,7 @@ import '../screens/profile_screen.dart';
 import '../screens/search_screen.dart';
 import '../models/trip.dart';
 import '../services/data_service.dart';
+import '../utils/responsive_helper.dart';
 
 const double kMinPrice = 0;
 const double kMaxPrice = 10000;
@@ -35,19 +36,27 @@ class _TabsScreenState extends State<TabsScreen> {
 
   Widget _buildFilterSheet() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: ResponsiveHelper.getPadding(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Filtreler',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 20),
+              fontWeight: FontWeight.bold
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
 
           // Maksimum fiyat
-          const Text('Maksimum Fiyat'),
+          Text(
+            'Maksimum Fiyat',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 16)
+            ),
+          ),
           Slider(
             value: _maxPrice,
             min: kMinPrice,
@@ -61,10 +70,15 @@ class _TabsScreenState extends State<TabsScreen> {
             },
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
 
           // Tarih seçici
-          const Text('Tarih'),
+          Text(
+            'Tarih',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 16)
+            ),
+          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
@@ -88,7 +102,7 @@ class _TabsScreenState extends State<TabsScreen> {
             },
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
 
           // Filtreleri uygula butonu
           SizedBox(
@@ -97,7 +111,19 @@ class _TabsScreenState extends State<TabsScreen> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('Filtreleri Uygula'),
+              style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                vertical: ResponsiveHelper.getFontSize(context, 12),
+                horizontal: ResponsiveHelper.getFontSize(context, 24)
+              ),
+            ),
+            child: Text(
+              'Filtreleri Uygula',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 16),
+                fontWeight: FontWeight.w600
+              ),
+            ),
             ),
           ),
         ],
@@ -123,17 +149,17 @@ class _TabsScreenState extends State<TabsScreen> {
       },
       {
         'Screen': const FavoritesScreen(),
-        'Title': 'Favoriler',
+        'Title': 'Favorilerim',
         'icon': Icons.star,
       },
       {
         'Screen': const UserReservationsScreen(),
-        'Title': 'Rezervasyonlar',
+        'Title': 'Rezervasyonlarım',
         'icon': Icons.calendar_today,
       },
       {
         'Screen': const ProfileScreen(),
-        'Title': 'Profil',
+        'Title': 'Profilim',
         'icon': Icons.person,
       },
     ];
@@ -244,11 +270,12 @@ class _TabsScreenState extends State<TabsScreen> {
             currentIndex: _selectedScreenIndex,
             type: BottomNavigationBarType.fixed,
             elevation: 0,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
             items: _screens.map((screen) => BottomNavigationBarItem(
               icon: Icon(screen['icon'] as IconData),
               label: screen['Title'] as String,
+              backgroundColor: Colors.white,
             )).toList(),
           ),
         ),

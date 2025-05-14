@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/responsive_helper.dart';
 
 
 class UserSignUpScreen extends StatefulWidget {
@@ -69,9 +70,10 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Kullanıcı Kaydı',
           style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
@@ -91,7 +93,7 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 20)),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -99,10 +101,14 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                       children: [
                         TextFormField(
                           controller: _usernameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Kullanıcı Adı',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.person),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveHelper.getFontSize(context, 16),
+                              vertical: ResponsiveHelper.getFontSize(context, 12),
+                            ),
                           ),
                           textInputAction: TextInputAction.next,
                           validator: (value) {
@@ -115,10 +121,14 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                         const SizedBox(height: 15),
                         TextFormField(
                           controller: _emailController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'E-posta',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.email),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveHelper.getFontSize(context, 16),
+                              vertical: ResponsiveHelper.getFontSize(context, 12),
+                            ),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
@@ -135,10 +145,14 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                         const SizedBox(height: 15),
                         TextFormField(
                           controller: _passwordController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Şifre',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.lock),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveHelper.getFontSize(context, 16),
+                              vertical: ResponsiveHelper.getFontSize(context, 12),
+                            ),
                           ),
                           obscureText: true,
                           textInputAction: TextInputAction.done,
@@ -167,10 +181,10 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                             ),
                             child: _isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
+                                : Text(
                                     'KAYIT OL',
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: ResponsiveHelper.getFontSize(context, 18),
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -182,7 +196,12 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Zaten hesabınız var mı? Giriş yapın'),
+                          child: Text(
+                            'Zaten hesabınız var mı? Giriş yapın',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 14),
+                            ),
+                          ),
                         ),
                       ],
                     ),

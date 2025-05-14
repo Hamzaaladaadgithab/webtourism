@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/responsive_helper.dart';
 
 class ManageUsersScreen extends StatefulWidget {
   static const routeName = '/manage-users';
@@ -15,11 +16,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Kullanıcıları Yönet',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: ResponsiveHelper.getFontSize(context, 20),
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         backgroundColor: Colors.blue.shade900,
@@ -39,9 +41,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveHelper.getFontSize(context, 16),
+                    vertical: ResponsiveHelper.getFontSize(context, 12),
                   ),
                 ),
                 items: [
@@ -83,11 +85,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
                         'Bu role sahip kullanıcı bulunamadı.',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: ResponsiveHelper.getFontSize(context, 16),
                           color: Colors.grey,
                         ),
                       ),
@@ -119,7 +121,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                     child: Text(
                                       userData['name']?[0]?.toUpperCase() ?? '?',
                                       style: TextStyle(
-                                        fontSize: 20,
+                                        fontSize: ResponsiveHelper.getFontSize(context, 20),
                                         fontWeight: FontWeight.bold,
                                         color: Colors.blue.shade900,
                                       ),
@@ -132,8 +134,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                       children: [
                                         Text(
                                           userData['name'] ?? 'İsimsiz Kullanıcı',
-                                          style: const TextStyle(
-                                            fontSize: 18,
+                                          style: TextStyle(
+                                            fontSize: ResponsiveHelper.getFontSize(context, 18),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -141,7 +143,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                         Text(
                                           userData['email'] ?? '',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: ResponsiveHelper.getFontSize(context, 14),
                                             color: Colors.grey.shade600,
                                           ),
                                         ),
