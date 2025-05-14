@@ -83,6 +83,36 @@ class Trip {
       return 'Orta';
     }
 
+    String normalizeSeason(dynamic value) {
+      if (value == null) return Season.SUMMER.toString().split('.').last;
+      String seasonStr = value.toString().toUpperCase();
+      if (seasonStr.contains('SEASON.')) {
+        seasonStr = seasonStr.split('.').last;
+      }
+      return seasonStr;
+    }
+
+    String normalizeType(dynamic value) {
+      if (value == null) return TripType.CULTURAL.toString().split('.').last;
+      String typeStr = value.toString().toUpperCase();
+      
+      // Handle enum format
+      if (typeStr.contains('TRIPTYPE.')) {
+        typeStr = typeStr.split('.').last;
+      }
+      
+      // Handle legacy values
+      Map<String, String> legacyTypes = {
+        'EXPLORATION': 'ADVENTURE',
+        'ACTIVITIES': 'CULTURAL',
+        'RECOVERY': 'RELAXATION',
+        'THERAPY': 'RELAXATION',
+        'NATURE': 'ADVENTURE'
+      };
+      
+      return legacyTypes[typeStr] ?? typeStr;
+    }
+
     return Trip(
       id: id,
       title: parseString(data['title']),
@@ -93,17 +123,21 @@ class Trip {
       location: parseString(data['location']),
       startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      season: parseString(data['season']),
-      type: parseString(data['type']),
+      season: normalizeSeason(data['season']),
+      type: normalizeType(data['type']),
       isFamilyFriendly: data['isFamilyFriendly'] ?? false,
       categories: convertToStringList(data['categories']),
       activities: convertToStringList(data['activities']),
       program: parseString(data['program']),
       capacity: data['capacity'] ?? 0,
-      status: TripStatus.values.firstWhere(
-        (e) => e.toString() == 'TripStatus.${parseString(data['status']).toUpperCase()}',
-        orElse: () => TripStatus.AVAILABLE,
-      ),
+      status: (() {
+        String statusStr = parseString(data['status']).toUpperCase();
+        if (statusStr == 'ACTIVE') return TripStatus.AVAILABLE;
+        return TripStatus.values.firstWhere(
+          (e) => e.toString() == 'TripStatus.$statusStr',
+          orElse: () => TripStatus.AVAILABLE,
+        );
+      })(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       groupSize: parseGroupSize(data['groupSize']),
       difficulty: parseDifficulty(data['difficulty']),

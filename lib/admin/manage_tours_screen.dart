@@ -14,8 +14,8 @@ class ManageToursScreen extends StatefulWidget {
 }
 
 class _ManageToursScreenState extends State<ManageToursScreen> {
-  String _selectedSeason = 'summer';
-  String _selectedType = 'exploration';
+  String _selectedSeason = Season.SUMMER.toString().split('.').last;
+  String _selectedType = TripType.CULTURAL.toString().split('.').last;
 
   @override
   Widget build(BuildContext context) {
@@ -54,24 +54,20 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                           vertical: 12,
                         ),
                       ),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'summer',
-                          child: const Text('Yaz'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'winter',
-                          child: const Text('Kış'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'spring',
-                          child: const Text('İlkbahar'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'autumn',
-                          child: const Text('Sonbahar'),
-                        ),
-                      ],
+                      items: Season.values.map((season) {
+                        String value = season.toString().split('.').last;
+                        String label = {
+                          'SUMMER': 'Yaz',
+                          'WINTER': 'Kış',
+                          'SPRING': 'İlkbahar',
+                          'AUTUMN': 'Sonbahar',
+                        }[value] ?? value;
+                        
+                        return DropdownMenuItem(
+                          value: value,
+                          child: Text(label),
+                        );
+                      }).toList(),
                       onChanged: (value) {
                         if (value != null) {
                           setState(() {
@@ -95,24 +91,20 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                           vertical: 12,
                         ),
                       ),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'exploration',
-                          child: const Text('Keşif'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'recovery',
-                          child: const Text('İyileşme'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'activities',
-                          child: const Text('Aktivite'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'therapy',
-                          child: const Text('Terapi'),
-                        ),
-                      ],
+                      items: TripType.values.map((type) {
+                        String value = type.toString().split('.').last;
+                        String label = {
+                          'CULTURAL': 'Kültürel',
+                          'ADVENTURE': 'Macera',
+                          'RELAXATION': 'Dinlenme',
+                          'EDUCATIONAL': 'Eğitim',
+                        }[value] ?? value;
+                        
+                        return DropdownMenuItem(
+                          value: value,
+                          child: Text(label),
+                        );
+                      }).toList(),
                       onChanged: (value) {
                         if (value != null) {
                           setState(() {
@@ -126,13 +118,12 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
               ),
             ),
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('trips')
-                    .orderBy('createdAt', descending: true)
-                    .where('season', isEqualTo: _selectedSeason)
-                    .where('type', isEqualTo: _selectedType)
-                    .snapshots(),
+              child: StreamBuilder<List<Trip>>(
+                stream: AdminService().getAllTrips().map((trips) {
+                  return trips.where((trip) =>
+                      trip.season == _selectedSeason &&
+                      trip.type == _selectedType).toList();
+                }),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(
@@ -146,7 +137,8 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  final trips = snapshot.data ?? [];
+                  if (trips.isEmpty) {
                     return Center(
                       child: Text(
                         'Bu kriterlere uygun gezi bulunamadı.',
@@ -161,11 +153,9 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
 
                   return ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: snapshot.data!.docs.length,
+                    itemCount: trips.length,
                     itemBuilder: (context, index) {
-                      final doc = snapshot.data!.docs[index];
-                      final data = doc.data() as Map<String, dynamic>;
-                      final trip = Trip.fromFirestore(doc.id, data);
+                      final trip = trips[index];
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 16),

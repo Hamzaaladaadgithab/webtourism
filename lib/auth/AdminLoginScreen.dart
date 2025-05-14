@@ -24,11 +24,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // E-postadaki boşlukları temizle
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
+      print('Giriş denemesi: $email'); // Debug için
+
       // Admin girişi yap
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -36,41 +39,48 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       // Admins tablosundan kontrol et
       final adminDoc = await FirebaseFirestore.instance
           .collection('admins')
-          .doc(email)
+          .doc(userCredential.user!.uid)
           .get();
 
       if (!adminDoc.exists) {
+        print('Admin bulunamadı: ${userCredential.user!.uid}'); // Debug için
         await FirebaseAuth.instance.signOut();
         throw FirebaseAuthException(code: 'user-not-found');
       }
 
-      // Admin durumunu kontrol et
+      // Admin verilerini al
       final adminData = adminDoc.data() as Map<String, dynamic>;
-      if (adminData['status'] != 'active') {
-        await FirebaseAuth.instance.signOut();
-        throw FirebaseAuthException(code: 'user-disabled');
-      }
+      print('Admin bulundu: ${adminData.toString()}'); // Debug için
+
+      // Sadece admins koleksiyonunda olması yeterli
+      // Role kontrolü kaldırıldı - tabloda olan herkes admin
 
       // Login bilgilerini güncelle
       await FirebaseFirestore.instance
           .collection('admins')
-          .doc(email)
+          .doc(userCredential.user!.uid)
           .update({
-        'metadata.lastLogin': DateTime.now().toIso8601String(),
-        'securitySettings.loginAttempts': 0
+        'lastLogin': DateTime.now().toIso8601String()
       });
 
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(AdminHomeScreen.routeName);
     } catch (error) {
+      print('Hata detayı: $error'); // Debug için
       var message = 'Bir hata oluştu!';
-      if (error.toString().contains('user-not-found')) {
-        message = 'Admin hesabı bulunamadı!';
+      
+      if (error.toString().contains('invalid-credential')) {
+        message = 'Giriş bilgileri hatalı! Lütfen şifrenizi kontrol edin.';
+      } else if (error.toString().contains('user-not-found')) {
+        message = 'Admin hesabı bulunamadı! Lütfen e-posta adresinizi kontrol edin.';
       } else if (error.toString().contains('wrong-password')) {
-        message = 'Yanlış şifre!';
+        message = 'Yanlış şifre! Lütfen tekrar deneyin.';
       } else if (error.toString().contains('user-disabled')) {
-        message = 'Admin hesabı devre dışı!';
+        message = 'Admin hesabı devre dışı! Yönetici ile iletişime geçin.';
       }
+      
+      print('Hata mesajı: $message'); // Debug için
+      print('Hata mesajı: $message'); // Debug için
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
       );

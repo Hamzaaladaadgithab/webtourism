@@ -54,30 +54,51 @@ class AdminService {
   // İlk admin kullanıcısını oluştur
   Future<void> createInitialAdmin() async {
     try {
-      // Önce admin koleksiyonunu kontrol et
-      final adminSnapshot = await _firestore.collection('admins').get();
-      
-      if (adminSnapshot.docs.isEmpty) {
-        // İlk admin kullanıcısını oluştur
-        final userCredential = await _auth.createUserWithEmailAndPassword(
-          email: 'admin@tourism.com',
-          password: 'admin123',
+      // Firebase Authentication'da kullanıcı oluştur veya giriş yap
+      UserCredential? userCredential;
+      try {
+        // Önce yeni kullanıcı oluşturmayı dene
+        userCredential = await _auth.createUserWithEmailAndPassword(
+          email: 'aladaada5105390@gmail.com',
+          password: '123456',
         );
-
-        // Admin bilgilerini Firestore'a kaydet
-        await _firestore.collection('admins').doc(userCredential.user!.uid).set({
-          'email': 'admin@tourism.com',
-          'name': 'Super Admin',
-          'role': 'superadmin',
-          'permissions': ['all'],
-          'createdAt': DateTime.now().toIso8601String(),
-          'lastLogin': DateTime.now().toIso8601String(),
-        });
-
-        print('İlk admin kullanıcısı oluşturuldu!');
+        print('Yeni kullanıcı oluşturuldu');
+      } catch (e) {
+        // Eğer kullanıcı zaten varsa, giriş yap
+        userCredential = await _auth.signInWithEmailAndPassword(
+          email: 'aladaada5105390@gmail.com',
+          password: '123456',
+        );
+        print('Mevcut kullanıcıya giriş yapıldı');
       }
+
+      // Kullanıcı ID'sini al
+      final uid = userCredential.user!.uid;
+      print('Kullanıcı ID: $uid');
+
+      // Firestore'da admin kaydını oluştur veya güncelle
+      await _firestore.collection('admins').doc(uid).set({
+        'email': 'aladaada5105390@gmail.com',
+        'name': 'Admin',
+        'role': 'admin',
+        'permissions': ['all'],
+        'createdAt': '2025-05-11T18:39:08.011',
+        'lastLogin': '2025-05-11T18:39:08.011',
+      }, SetOptions(merge: true));
+
+      print('Admin kaydı güncellendi/oluşturuldu');
+
+      // Mevcut admins koleksiyonunu kontrol et
+      final adminDocs = await _firestore.collection('admins').get();
+      print('Toplam admin sayısı: ${adminDocs.docs.length}');
+      for (var doc in adminDocs.docs) {
+        print('Admin ID: ${doc.id}, Data: ${doc.data()}');
+      }
+
+      // Çıkış yap
+      await _auth.signOut();
     } catch (e) {
-      print('İlk admin oluşturma hatası: $e');
+      print('Admin oluşturma hatası: $e');
       throw e;
     }
   }
@@ -250,10 +271,19 @@ class AdminService {
   Stream<List<Trip>> getAllTrips() {
     return _firestore
         .collection('trips')
+        .orderBy('sHason')
+        .orderBy('type')
+        .orderBy('createdAt')
+        .orderBy(FieldPath.documentId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
-            .toList());
+        .map((snapshot) {
+          print('Turlar yükleniyor. Bulunan tur sayısı: ${snapshot.docs.length}');
+          final trips = snapshot.docs.map((doc) {
+            print('Tur verisi: ${doc.data()}');
+            return Trip.fromFirestore(doc.id, doc.data());
+          }).toList();
+          return trips;
+        });
   }
 
   // Tur sil
