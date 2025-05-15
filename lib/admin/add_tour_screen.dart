@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
-import '../services/admin_service.dart';
 import '../utils/responsive_helper.dart';
 
 class AddTourScreen extends StatefulWidget {
