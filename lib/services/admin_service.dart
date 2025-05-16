@@ -51,6 +51,33 @@ class AdminService {
     await _auth.signOut();
   }
 
+  // Tur silme
+  Future<void> deleteTour(String tourId) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Delete the tour document
+      final tourRef = _firestore.collection('trips').doc(tourId);
+      batch.delete(tourRef);
+
+      // Delete all reservations for this tour
+      final reservationsSnapshot = await _firestore
+          .collection('reservations')
+          .where('tripId', isEqualTo: tourId)
+          .get();
+
+      for (var doc in reservationsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Tur silinemedi: ${e.toString()}');
+    }
+  }
+
+
+
   // İlk admin kullanıcısını oluştur
   Future<void> createInitialAdmin() async {
     try {
@@ -271,10 +298,7 @@ class AdminService {
   Stream<List<Trip>> getAllTrips() {
     return _firestore
         .collection('trips')
-        .orderBy('sHason')
-        .orderBy('type')
-        .orderBy('createdAt')
-        .orderBy(FieldPath.documentId)
+        .orderBy('startDate', descending: true)
         .snapshots()
         .map((snapshot) {
           print('Turlar yükleniyor. Bulunan tur sayısı: ${snapshot.docs.length}');

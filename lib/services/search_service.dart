@@ -18,12 +18,16 @@ class SearchService {
       // 1. Metin araması
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final searchLower = searchQuery.toLowerCase();
-        query = query.where('searchTags', arrayContains: searchLower);
+        // Başlık veya konum içinde arama yap
+        query = query.where('searchFields', arrayContainsAny: [
+          'title_$searchLower',
+          'location_$searchLower',
+        ]);
       }
 
       // 2. Kategori filtresi
       if (category != null && category.isNotEmpty) {
-        query = query.where('category', isEqualTo: category);
+        query = query.where('categories', arrayContains: category);
       }
 
       // 3. Fiyat filtresi
@@ -43,8 +47,8 @@ class SearchService {
       
       // Sonuçları Trip modellerine dönüştür
       return querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Trip.fromFirestore(doc.id, data);
+        final tripData = doc.data() as Map<String, dynamic>;
+        return Trip.fromFirestore(doc.id, tripData);
       }).toList();
     } catch (e) {
       print('Tur arama hatası: $e');
@@ -62,7 +66,7 @@ class SearchService {
           .get();
 
       return querySnapshot.docs.map((doc) =>
-        Trip.fromFirestore(doc.id, doc.data() as Map<String, dynamic>)
+        Trip.fromFirestore(doc.id, doc.data())
       ).toList();
     } catch (e) {
       print('Popüler geziler getirilirken hata: $e');
@@ -107,7 +111,7 @@ class SearchService {
           .get();
 
       return querySnapshot.docs.map((doc) =>
-        Trip.fromFirestore(doc.id, doc.data() as Map<String, dynamic>)
+        Trip.fromFirestore(doc.id, doc.data())
       ).toList();
     } catch (e) {
       print('Önerilen geziler getirilirken hata: $e');

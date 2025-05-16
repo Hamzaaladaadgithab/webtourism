@@ -29,8 +29,7 @@ class _TabsScreenState extends State<TabsScreen> {
   final DataService _dataService = DataService();
   int _selectedScreenIndex = 0;
   late List<Map<String, dynamic>> _screens;
-  late List<Trip> _favoriteTrips;
-  List<Trip> _availableTrips = [];
+
   double _maxPrice = kMaxPrice;
   DateTime? _selectedDate;
 
@@ -134,7 +133,7 @@ class _TabsScreenState extends State<TabsScreen> {
   @override
   void initState() { 
     super.initState();
-    _favoriteTrips = widget.favoriteTrips;
+
     _setupDataStream();
     _screens = [
       {
@@ -169,7 +168,7 @@ class _TabsScreenState extends State<TabsScreen> {
     _dataService.getTripsStream().listen((trips) {
       if (mounted) {
         setState(() {
-          _availableTrips = trips;
+          // Trips güncellemesi
         });
       }
     });

@@ -1,134 +1,117 @@
 import 'package:flutter/material.dart';
-import '../services/data_service.dart';
-import '../widgets/category_item.dart';
-import '../models/category.dart';
 import '../utils/responsive_helper.dart';
+import 'category_trips_screen.dart';
 
-class CategoriesScreen extends StatefulWidget {
+class CategoriesScreen extends StatelessWidget {
+  static const routeName = '/categories';
+
   final bool showAppBar;
 
-  const CategoriesScreen({this.showAppBar = true});
+  const CategoriesScreen({super.key, this.showAppBar = true});
 
-  @override
-  State<CategoriesScreen> createState() => _CategoriesScreenState();
-}
-
-class _CategoriesScreenState extends State<CategoriesScreen> {
-  final DataService _dataService = DataService();
-
-
-  @override   
-  void initState() {
-    super.initState();
-  }
-
-  // Ekran genişliğine göre grid kolonlarını hesapla
-  int _calculateCrossAxisCount(BuildContext context) {
-    if (ResponsiveHelper.isDesktop(context)) {
-      return 4; // Desktop: 4 kolon
-    } else if (ResponsiveHelper.isTablet(context)) {
-      return 3; // Tablet: 3 kolon
-    }
-    return 2; // Mobil: 2 kolon
-  }
+  // Her kategori için simge ve renk tanımları
+  final Map<String, Map<String, dynamic>> categoryDetails = const {
+    'Doğa Turizmi': {
+      'icon': Icons.landscape,
+      'color': Color(0xFF4CAF50),
+      'description': 'Doğanın güzelliğini keşfedin',
+    },
+    'Kültür Turizmi': {
+      'icon': Icons.museum,
+      'color': Color(0xFF9C27B0),
+      'description': 'Tarihi ve kültürel deneyimler',
+    },
+    'Macera Turizmi': {
+      'icon': Icons.terrain,
+      'color': Color(0xFFF57C00),
+      'description': 'Heyecan dolu aktiviteler',
+    },
+    'Eğitim Turizmi': {
+      'icon': Icons.school,
+      'color': Color(0xFF1976D2),
+      'description': 'Öğrenerek seyahat edin',
+    },
+  };
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    final crossAxisCount = isDesktop ? 2 : 1;
+
     return Scaffold(
-      appBar: widget.showAppBar
+      appBar: showAppBar
           ? AppBar(
-              title: Text(
-                'Kategoriler',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: ResponsiveHelper.getFontSize(context, 20),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              title: const Text('Kategoriler'),
               backgroundColor: Colors.blue.shade900,
               elevation: 0,
-              centerTitle: true,
             )
           : null,
-      body: StreamBuilder<List<Category>>(
-        stream: _dataService.getCategoriesStream(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, 
-                       size: ResponsiveHelper.getFontSize(context, 48), 
-                       color: Colors.red),
-                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
-                  Text(
-                    'Veriler yüklenirken bir hata oluştu',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getFontSize(context, 16)
+      body: GridView.builder(
+        padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: isDesktop ? 2 : 1.5,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: categoryDetails.length,
+        itemBuilder: (context, index) {
+          final categoryName = categoryDetails.keys.elementAt(index);
+          final details = categoryDetails[categoryName]!;
+
+          return Card(
+            elevation: 4,
+            margin: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  CategoryTripsScreen.routeName,
+                  arguments: {
+                    'category': categoryName,
+                    'color': categoryDetails[categoryName]!['color'],
+                    'icon': categoryDetails[categoryName]!['icon'],
+                    'description': categoryDetails[categoryName]!['description'],
+                  },
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      details['icon'] as IconData,
+                      size: ResponsiveHelper.getFontSize(context, 48),
+                      color: details['color'] as Color,
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (!snapshot.hasData) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.category_outlined, 
-                       size: ResponsiveHelper.getFontSize(context, 48), 
-                       color: Colors.grey),
-                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
-                  Text(
-                    'Henüz kategori eklenmemiş',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getFontSize(context, 16)
+                    const SizedBox(height: 16),
+                    Text(
+                      categoryName,
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getFontSize(context, 18),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final categories = snapshot.data!;
-          final crossAxisCount = _calculateCrossAxisCount(context);
-          
-          return Center(
-            child: Container(
-              constraints: BoxConstraints(maxWidth: 1600),
-              padding: EdgeInsets.zero,
-              child: GridView.builder(
-                padding: EdgeInsets.all(40),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  childAspectRatio: 1.3,
-                  crossAxisSpacing: 40,
-                  mainAxisSpacing: 40,
+                    const SizedBox(height: 8),
+                    Text(
+                      details['description'] as String,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getFontSize(context, 14),
+                      ),
+                    ),
+                  ],
                 ),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return CategoryItem(
-                    category.id,
-                    category.title,
-                    category.imageUrl,
-                  );
-                },
               ),
             ),
           );
-      },
+        },
       ),
     );
-    
   }
 }

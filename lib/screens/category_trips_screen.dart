@@ -6,10 +6,10 @@ import '../services/user_service.dart';
 import '../services/auth_service.dart';
 import '../utils/responsive_helper.dart';
 
-
-
 class CategoryTripsScreen extends StatefulWidget {
   static const routeName = '/category-trips';
+
+  const CategoryTripsScreen({super.key});
 
   @override
   State<CategoryTripsScreen> createState() => _CategoryTripsScreenState();
@@ -20,6 +20,10 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
   Set<String> _favorites = {};
+  late String _category;
+  late Color _categoryColor;
+  late IconData _categoryIcon;
+  late String _categoryDescription;
 
   @override
   void initState() {
@@ -37,12 +41,14 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Favoriler yüklenirken bir hata oluştu: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Favoriler yüklenirken bir hata oluştu: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -68,126 +74,187 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
         }
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_favorites.contains(tripId)
-              ? 'Favorilere eklendi'
-              : 'Favorilerden çıkarıldı'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_favorites.contains(tripId)
+                ? 'Favorilere eklendi'
+                : 'Favorilerden çıkarıldı'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hata: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: ResponsiveHelper.getFontSize(context, 64),
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Bu kategoride henüz gezi yok',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 18),
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: CircularProgressIndicator(
+        color: Colors.blue.shade900,
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: ResponsiveHelper.getFontSize(context, 64),
+            color: Colors.red,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Bir hata oluştu',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 18),
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 14),
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => setState(() {}),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade900,
+            ),
+            child: const Text('Tekrar Dene'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    _category = args['category'] as String;
+    _categoryColor = args['color'] as Color;
+    _categoryIcon = args['icon'] as IconData;
+    _categoryDescription = args['description'] as String;
+  }
+
+  Future<List<Trip>> _getCategoryTrips() async {
+    final trips = await _dataService.getTrips();
+    return trips.where((trip) => 
+      trip.categories.contains(_category)
+    ).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final categoryId = args['id'] as String;
+    final isDesktop = ResponsiveHelper.isDesktop(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          args['title'] as String,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: ResponsiveHelper.getFontSize(context, 20),
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          children: [
+            Icon(_categoryIcon, size: 24),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_category),
+                Text(
+                  _categoryDescription,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        backgroundColor: Colors.blue.shade900,
-        centerTitle: true,
+        backgroundColor: _categoryColor,
+        elevation: 0,
       ),
-      body: StreamBuilder<List<Trip>>(
-        stream: _dataService.getTripsByCategory(categoryId),
+      body: FutureBuilder<List<Trip>>(
+        future: _getCategoryTrips(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return _buildLoadingState();
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: ResponsiveHelper.getFontSize(context, 48),
-                    color: Colors.red
-                  ),
-                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
-                  Text(
-                    'Veriler yüklenirken bir hata oluştu',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getFontSize(context, 16)
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {});
-                    },
-                    child: const Text('Tekrar Dene'),
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorState(snapshot.error.toString());
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    color: Colors.grey,
-                    size: ResponsiveHelper.getFontSize(context, 60),
-                  ),
-                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
-                  Text(
-                    'Bu kategoride gezi bulunamadı',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: ResponsiveHelper.getFontSize(context, 16),
-                    ),
-                  ),
-                ],
-              ),
-            );
+          final trips = snapshot.data ?? [];
+          if (trips.isEmpty) {
+            return _buildEmptyState();
           }
 
-          final trips = snapshot.data!;
-
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              return ListView.builder(
-                padding: ResponsiveHelper.getPadding(context),
-                itemCount: trips.length,
-                itemBuilder: (context, index) {
-                  final trip = trips[index];
-                  return TripCard(
-                    trip: trip,
-                    isFavorite: _favorites.contains(trip.id),
-                    onFavoriteToggle: () => _toggleFavorite(trip.id),
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        '/trip-detail',
-                        arguments: trip,
-                      );
-                    },
-                  );
-                },
-              );
-            },
+          return Padding(
+            padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isDesktop ? 3 : 1,
+                childAspectRatio: isDesktop ? 1.2 : 1.5,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: trips.length,
+              itemBuilder: (context, index) {
+                final trip = trips[index];
+                return TripCard(
+                  trip: trip,
+                  isFavorite: _favorites.contains(trip.id),
+                  onFavoriteToggle: () => _toggleFavorite(trip.id),
+                  onTap: () {
+                    Navigator.of(context).pushNamed(
+                      '/trip-detail',
+                      arguments: trip,
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),

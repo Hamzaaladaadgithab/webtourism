@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../services/favorite_service.dart';
-import '../services/auth_service.dart';
+
 import '../utils/responsive_helper.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -13,7 +13,7 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final FavoriteService _favoriteService = FavoriteService();
-  final AuthService _authService = AuthService();
+
   bool _isLoading = false;
 
   Future<void> _removeFromFavorites(String tripId) async {
@@ -136,13 +136,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Süre',
+                          'Tarih',
                           style: TextStyle(
                             color: Colors.grey,
                           ),
                         ),
                         Text(
-                          '${trip.duration} Gün',
+                          '${trip.startDate.day}/${trip.startDate.month} - ${trip.endDate.day}/${trip.endDate.month}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -153,14 +153,38 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         const Text(
-                          'Sezon',
+                          'Konum',
                           style: TextStyle(
                             color: Colors.grey,
                           ),
                         ),
                         Text(
-                          trip.season,
+                          trip.location,
                           style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Kategoriler',
+                          style: TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          trip.categories.join(", "),
+                          style: TextStyle(
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

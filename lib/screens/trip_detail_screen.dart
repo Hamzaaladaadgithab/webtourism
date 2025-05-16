@@ -206,9 +206,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildDetailRow('Konum', trip.location, Icons.location_on),
-                      _buildDetailRow('Süre', '${trip.duration} gün', Icons.timer),
-                      _buildDetailRow('Grup Boyutu', '${trip.groupSize} kişi', Icons.group),
-                      _buildDetailRow('Zorluk', trip.difficulty, Icons.trending_up),
+                      _buildDetailRow('Tarih', '${trip.startDate.day}/${trip.startDate.month} - ${trip.endDate.day}/${trip.endDate.month}', Icons.calendar_today),
                       const SizedBox(height: 20),
                       const Text(
                         'Açıklama',
@@ -218,15 +216,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       Text(trip.description),
                       const SizedBox(height: 20),
                       const Text(
-                        'Aktiviteler',
+                        'Kategoriler',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: trip.activities.map((activity) => Chip(
-                          label: Text(activity),
+                        children: trip.categories.map((category) => Chip(
+                          label: Text(category),
                           backgroundColor: Colors.blue.shade100,
                         )).toList(),
                       ),

@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../models/category.dart';
 import '../models/trip.dart';
+import '../models/category.dart' as app_category;
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DataService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  DataService();
 
   // Favori gezileri getir
   Stream<List<Trip>> getFavoriteTrips() {
@@ -14,7 +17,7 @@ class DataService {
       return Stream.value([]);
     }
 
-    return _firestore
+    return _db
         .collection('users')
         .doc(user.uid)
         .collection('favorites')
@@ -23,7 +26,7 @@ class DataService {
           final tripIds = snapshot.docs.map((doc) => doc.id).toList();
           if (tripIds.isEmpty) return [];
 
-          final tripsSnapshot = await _firestore
+          final tripsSnapshot = await _db
               .collection('trips')
               .where(FieldPath.documentId, whereIn: tripIds)
               .get();
@@ -39,7 +42,7 @@ class DataService {
     final user = _auth.currentUser;
     if (user == null) return false;
 
-    final docSnapshot = await _firestore
+    final docSnapshot = await _db
         .collection('users')
         .doc(user.uid)
         .collection('favorites')
@@ -56,7 +59,7 @@ class DataService {
       throw Exception('Kullanıcı bulunamadı');
     }
 
-    final favoriteRef = _firestore
+    final favoriteRef = _db
         .collection('users')
         .doc(user.uid)
         .collection('favorites')
@@ -73,51 +76,20 @@ class DataService {
     }
   }
 
-  String _parseProgram(dynamic value) {
-    if (value == null) return '';
-    
+  // Convert program data to string format
+  String convertProgramToString(List<String> value) {
     try {
-      if (value is String) return value;
-      if (value is List) {
-        // Listeyi birleştirip string yap
-        return value.join('\n');
-      }
+      return value.join('\n');
     } catch (e) {
       print('Program dönüşümünde hata: $e');
     }
-    
-    return ''; // Varsayılan değer
-  }
 
-  int _parseDuration(dynamic value) {
-    if (value == null) return 1;
-    
-    try {
-      if (value is int) return value;
-      if (value is String) {
-        // "5 gün" gibi bir string'den sayıyı çıkar
-        return int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
-      }
-      if (value is List) {
-        // Liste içindeki ilk elemanı kullan
-        if (value.isNotEmpty) {
-          var firstValue = value[0];
-          if (firstValue is int) return firstValue;
-          if (firstValue is String) {
-            return int.tryParse(firstValue.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
-          }
-        }
-      }
-    } catch (e) {
-      print('Süre dönüşümünde hata: $e');
-    }
-    
-    return 1; // Varsayılan değer
+    return '';
   }
 
   DateTime _parseTimestamp(dynamic value, {bool addOneDay = false}) {
     if (value == null) {
-      return addOneDay 
+      return addOneDay
           ? DateTime.now().add(const Duration(days: 1))
           : DateTime.now();
     }
@@ -134,20 +106,19 @@ class DataService {
       print('Tarih dönüşüm hatası: $e');
     }
 
-    return addOneDay 
+    return addOneDay
         ? DateTime.now().add(const Duration(days: 1))
         : DateTime.now();
   }
 
   // Kategorileri gerçek zamanlı dinle
-  Stream<List<Category>> getCategoriesStream() {
+  Stream<List<app_category.Category>> getCategoriesStream() {
     try {
-      return _firestore.collection('categories').snapshots().map((snapshot) {
+      return _db.collection('categories').snapshots().map((snapshot) {
         return snapshot.docs.map((doc) {
           final data = doc.data();
-          print('Category data: $data');
-          return Category(
-            id: doc.id, // Belge ID'sini kullan
+          return app_category.Category(
+            id: doc.id,
             title: data['title'] ?? 'Isimsiz Kategori',
             imageUrl: data['imageUrl'] ?? '',
           );
@@ -162,65 +133,27 @@ class DataService {
   // Turları gerçek zamanlı dinle
   Stream<List<Trip>> getTripsStream() {
     try {
-      return _firestore.collection('trips').snapshots().map((snapshot) {
+      return _db.collection('trips').snapshots().map((snapshot) {
         return snapshot.docs.map((doc) {
           final data = doc.data();
-          print('Trip data: $data');
-          
-          // Kategorileri kontrol et ve null kontrolü yap
-          List<String> categories = [];
-          try {
-            categories = (data['categories'] as List?)?.map((e) => e.toString()).toList() ?? [];
-          } catch (e) {
-            print('Kategori dönüşümünde hata: $e');
-          }
-          print('Trip categories: $categories');
-          
-          // TripType'ı kontrol et
-          final tripTypeStr = data['type'] ?? 'CULTURAL';
-          final tripType = TripType.values.firstWhere(
-            (e) => e.toString().split('.').last == tripTypeStr,
-            orElse: () => TripType.CULTURAL,
-          );
-          
-          // Season'ı kontrol et
-          final seasonStr = data['season'] ?? 'SUMMER';
-          final season = Season.values.firstWhere(
-            (e) => e.toString().split('.').last == seasonStr,
-            orElse: () => Season.SUMMER,
-          );
-          
-          // Duration'ı kontrol et
-          final durationStr = data['duration'] is List ? data['duration'][0] : data['duration'];
-          final duration = int.tryParse(durationStr.toString().replaceAll(' gün', '')) ?? 1;
-          
-          // Fiyatı kontrol et
-          final price = (data['price'] as num?)?.toDouble() ?? 0.0;
-          
+
           return Trip(
             id: doc.id,
-            title: data['title'] ?? 'Isimsiz Tur',
+            title: data['title'] ?? '',
             description: data['description'] ?? '',
             imageUrl: data['imageUrl'] ?? '',
-            price: price,
-            duration: duration,
-            location: data['location'] ?? 'Konum belirtilmedi',
+            location: data['location'] ?? '',
+            price: (data['price'] as num?)?.toDouble() ?? 0.0,
             startDate: _parseTimestamp(data['startDate']),
             endDate: _parseTimestamp(data['endDate'], addOneDay: true),
-            season: season.toString().split('.').last,
-            type: tripType.toString().split('.').last,
-            isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-            categories: (data['categories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-            activities: (data['activities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-            program: _parseProgram(data['program']),
-            capacity: data['capacity'] ?? 10,
+            categories: (data['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
             status: TripStatus.values.firstWhere(
-              (e) => e.toString().split('.').last == data['status'],
+              (e) => e.toString().split('.').last == (data['status'] ?? 'AVAILABLE'),
               orElse: () => TripStatus.AVAILABLE,
             ),
-            createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
-            groupSize: data['groupSize'] ?? 1,
-            difficulty: data['difficulty'] ?? 'Orta',
+            createdAt: _parseTimestamp(data['createdAt']),
+            duration: (data['duration'] as num?)?.toInt() ?? 1,
+            capacity: (data['capacity'] as num?)?.toInt() ?? 10,
           );
         }).toList();
       });
@@ -231,19 +164,19 @@ class DataService {
   }
 
   // Kategorileri çek
-  Future<List<Category>> getCategories() async {
+  Future<List<app_category.Category>> getCategories() async {
     try {
-      final snapshot = await _firestore.collection('categories').get();
+      final snapshot = await _db.collection('categories').get();
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        return Category(
-          id: doc.id, // Belge ID'sini kullan
-          title: data['title'] ?? 'Isimsiz Kategori',
-          imageUrl: data['imageUrl'] ?? '',
+        return app_category.Category(
+          id: doc.id,
+          title: data['title'] as String? ?? 'Isimsiz Kategori',
+          imageUrl: data['imageUrl'] as String? ?? '',
         );
       }).toList();
     } catch (e) {
-      print('Kategoriler çekilirken hata: $e');
+      print('Kategoriler çekilirken hata: ${e.toString()}');
       return [];
     }
   }
@@ -251,59 +184,153 @@ class DataService {
   // Turları çek
   Future<List<Trip>> getTrips() async {
     try {
-      final snapshot = await _firestore.collection('trips').get();
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        
-        // TripType'ı kontrol et
-        final tripTypeStr = data['type'] ?? 'CULTURAL';
-        final tripType = TripType.values.firstWhere(
-          (e) => e.toString().split('.').last == tripTypeStr,
-          orElse: () => TripType.CULTURAL,
-        );
-        
-        // Season'ı kontrol et
-        final seasonStr = data['season'] ?? 'SUMMER';
-        final season = Season.values.firstWhere(
-          (e) => e.toString().split('.').last == seasonStr,
-          orElse: () => Season.SUMMER,
-        );
-        
-        // Duration'ı kontrol et
-        final durationStr = data['duration'] is List ? data['duration'][0] : data['duration'];
-        final duration = int.tryParse(durationStr.toString().replaceAll(' gün', '')) ?? 1;
-        
-        // Fiyatı kontrol et
-        final price = (data['price'] as num?)?.toDouble() ?? 0.0;
-        
+      final QuerySnapshot tripsSnapshot = await _db.collection('trips').get();
+      return tripsSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
         return Trip(
           id: doc.id,
-          title: data['title'] ?? 'Isimsiz Tur',
+          title: data['title'] ?? '',
           description: data['description'] ?? '',
           imageUrl: data['imageUrl'] ?? '',
-          price: price,
-          duration: duration,
-          location: data['location'] ?? 'Konum belirtilmedi',
+          location: data['location'] ?? '',
+          price: (data['price'] as num?)?.toDouble() ?? 0.0,
           startDate: _parseTimestamp(data['startDate']),
           endDate: _parseTimestamp(data['endDate'], addOneDay: true),
-          season: season.toString().split('.').last,
-          type: tripType.toString().split('.').last,
-          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-          categories: (data['categories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-          activities: (data['activities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-          program: _parseProgram(data['program']),
-          capacity: data['capacity'] ?? 10,
+          categories: (data['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
           status: TripStatus.values.firstWhere(
-            (e) => e.toString().split('.').last == data['status'],
+            (e) => e.toString().split('.').last == (data['status'] ?? 'AVAILABLE'),
             orElse: () => TripStatus.AVAILABLE,
           ),
-          createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
-          groupSize: data['groupSize'] ?? 10,
-          difficulty: data['difficulty'] ?? 'Orta',
+          createdAt: _parseTimestamp(data['createdAt']),
+          duration: (data['duration'] as num?)?.toInt() ?? 1,
+          capacity: (data['capacity'] as num?)?.toInt() ?? 10,
         );
       }).toList();
     } catch (e) {
-      print('Turlar çekilirken hata: $e');
+      print('Error getting trips: $e');
+      return [];
+    }
+  }
+
+  Future<Trip?> getTripById(String tripId) async {
+    try {
+      final DocumentSnapshot tripDoc = await _db.collection('trips').doc(tripId).get();
+      if (!tripDoc.exists) return null;
+
+      final data = tripDoc.data() as Map<String, dynamic>;
+      return Trip(
+        id: tripDoc.id,
+        title: data['title'] ?? '',
+        description: data['description'] ?? '',
+        imageUrl: data['imageUrl'] ?? '',
+        location: data['location'] ?? '',
+        price: (data['price'] as num?)?.toDouble() ?? 0.0,
+        startDate: _parseTimestamp(data['startDate']),
+        endDate: _parseTimestamp(data['endDate'], addOneDay: true),
+        categories: (data['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
+        status: TripStatus.values.firstWhere(
+          (e) => e.toString().split('.').last == (data['status'] ?? 'AVAILABLE'),
+          orElse: () => TripStatus.AVAILABLE,
+        ),
+        createdAt: _parseTimestamp(data['createdAt']),
+        duration: (data['duration'] as num?)?.toInt() ?? 1,
+        capacity: (data['capacity'] as num?)?.toInt() ?? 10,
+      );
+    } catch (e) {
+      print('Error getting trip by id: $e');
+      return null;
+    }
+  }
+
+  Future<List<Trip>> getTripsByCategoryId(String categoryId) async {
+    try {
+      final QuerySnapshot tripsSnapshot = await _db
+          .collection('trips')
+          .where('categories', arrayContains: categoryId)
+          .get();
+
+      return tripsSnapshot.docs
+          .map((doc) => Trip.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error getting trips by category: $e');
+      return [];
+    }
+  }
+
+  Future<List<Trip>> searchTrips(String query) async {
+    try {
+      final QuerySnapshot tripsSnapshot = await _db
+          .collection('trips')
+          .where('title', isGreaterThanOrEqualTo: query)
+          .where('title', isLessThan: query + 'z')
+          .get();
+
+      return tripsSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return Trip(
+          id: doc.id,
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          imageUrl: data['imageUrl'] ?? '',
+          location: data['location'] ?? '',
+          price: (data['price'] as num?)?.toDouble() ?? 0.0,
+          startDate: _parseTimestamp(data['startDate']),
+          endDate: _parseTimestamp(data['endDate'], addOneDay: true),
+          categories: (data['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
+          status: TripStatus.values.firstWhere(
+            (e) => e.toString().split('.').last == (data['status'] ?? 'AVAILABLE'),
+            orElse: () => TripStatus.AVAILABLE,
+          ),
+          createdAt: _parseTimestamp(data['createdAt']),
+          duration: (data['duration'] as num?)?.toInt() ?? 1,
+          capacity: (data['capacity'] as num?)?.toInt() ?? 10,
+        );
+      }).toList();
+    } catch (e) {
+      print('Error searching trips: $e');
+      return [];
+    }
+  }
+
+  Future<List<Trip>> filterTrips({
+    String? category,
+    double? minPrice,
+    double? maxPrice,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      Query query = _db.collection('trips');
+
+      if (category != null) {
+        query = query.where('categories', arrayContains: category);
+      }
+
+      if (minPrice != null) {
+        query = query.where('price', isGreaterThanOrEqualTo: minPrice);
+      }
+
+      if (maxPrice != null) {
+        query = query.where('price', isLessThanOrEqualTo: maxPrice);
+      }
+
+      if (startDate != null) {
+        query = query.where('startDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+      }
+
+      if (endDate != null) {
+        query = query.where('endDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+      }
+
+      final QuerySnapshot tripsSnapshot = await query.get();
+
+      return tripsSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return Trip.fromFirestore(doc.id, data);
+      }).toList();
+    } catch (e) {
+      print('Error getting filtered trips: $e');
       return [];
     }
   }
@@ -311,7 +338,7 @@ class DataService {
   // Tur programını güncelle
   Future<void> updateTripProgram(String tripId, String newProgram) async {
     try {
-      await _firestore.collection('trips').doc(tripId).update({
+      await _db.collection('trips').doc(tripId).update({
         'program': newProgram,
       });
       print('Program başarıyla güncellendi!');
@@ -324,153 +351,100 @@ class DataService {
   // Tur aktivitelerini güncelle
   Future<void> updateTripActivities(String tripId, List<String> newActivities) async {
     try {
-      await _firestore.collection('trips').doc(tripId).update({
+      await _db.collection('trips').doc(tripId).update({
         'activities': newActivities,
       });
       print('Aktiviteler başarıyla güncellendi!');
     } catch (e) {
       print('Aktiviteler güncellenirken hata: $e');
-      rethrow;
     }
   }
 
-  // Kategoriye göre gezileri getir
-  Stream<List<Trip>> getTripsByCategory(String categoryId) {
-    return _firestore
-        .collection('trips')
-        .where('categories', arrayContainsAny: [categoryId])
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Trip(
-          id: doc.id,
-          title: data['title'] ?? '',
-          description: data['description'] ?? '',
-          imageUrl: data['imageUrl'] ?? '',
-          price: (data['price'] ?? 0).toDouble(),
-          duration: _parseDuration(data['duration']),
-          location: data['location'] ?? '',
-          startDate: _parseTimestamp(data['startDate']),
-          endDate: _parseTimestamp(data['endDate'], addOneDay: true),
-          season: data['season'] ?? 'SUMMER',
-          type: data['type'] ?? 'CULTURAL',
-          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-          categories: List<String>.from(data['categories'] ?? []),
-          activities: List<String>.from(data['activities'] ?? []),
-          program: _parseProgram(data['program']),
-          capacity: data['capacity'] ?? 0,
-          status: TripStatus.values.firstWhere(
-            (e) => e.toString().split('.').last == data['status'],
-            orElse: () => TripStatus.AVAILABLE,
-          ),
-          createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
-          groupSize: data['groupSize'] ?? 10,
-          difficulty: data['difficulty'] ?? 'Orta',
-        );
-      }).toList();
-    });
-  }
-
-  // Tüm gezileri getir
-  Stream<List<Trip>> getAllTrips() {
-    return _firestore.collection('trips').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Trip(
-          id: doc.id,
-          title: data['title'] ?? '',
-          description: data['description'] ?? '',
-          imageUrl: data['imageUrl'] ?? '',
-          price: (data['price'] ?? 0).toDouble(),
-          duration: _parseDuration(data['duration']),
-          location: data['location'] ?? '',
-          startDate: _parseTimestamp(data['startDate']),
-          endDate: _parseTimestamp(data['endDate'], addOneDay: true),
-          season: data['season'] ?? 'SUMMER',
-          type: data['type'] ?? 'CULTURAL',
-          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-          categories: List<String>.from(data['categories'] ?? []),
-          activities: List<String>.from(data['activities'] ?? []),
-          program: _parseProgram(data['program']),
-          capacity: data['capacity'] ?? 0,
-          status: TripStatus.values.firstWhere(
-            (e) => e.toString().split('.').last == data['status'],
-            orElse: () => TripStatus.AVAILABLE,
-          ),
-          createdAt: _parseTimestamp(data['createdAt']) ?? DateTime.now(),
-          groupSize: data['groupSize'] ?? 10,
-          difficulty: data['difficulty'] ?? 'Orta',
-        );
-      }).toList();
-    });
-  }
-
-  // Gezi detaylarını getir
-  Future<Trip?> getTripById(String tripId) async {
+  Future<void> updateTrip(Trip trip) async {
     try {
-      final doc = await _firestore.collection('trips').doc(tripId).get();
-      if (!doc.exists) return null;
-
-      final data = doc.data()!;
-      return Trip(
-        id: doc.id,
-        title: data['title'] ?? '',
-        description: data['description'] ?? '',
-        imageUrl: data['imageUrl'] ?? '',
-        price: (data['price'] ?? 0).toDouble(),
-        groupSize: data['groupSize'] ?? 1,
-        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        duration: data['duration'] ?? 1,
-        location: data['location'] ?? '',
-        startDate: (data['startDate'] as Timestamp).toDate(),
-        difficulty: data['difficulty'] ?? 'Easy',
-        endDate: (data['endDate'] as Timestamp).toDate(),
-        season: data['season'] ?? 'SUMMER',
-        type: data['type'] ?? 'CULTURAL',
-        isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-        categories: List<String>.from(data['categories'] ?? []),
-        activities: List<String>.from(data['activities'] ?? []),
-        program: data['program'] ?? '',
-        capacity: data['capacity'] ?? 0,
-        status: TripStatus.values.firstWhere(
-          (e) => e.toString().split('.').last == data['status'],
-          orElse: () => TripStatus.AVAILABLE,
-        ),
-      );
-    } catch (e) {
-      print('Error getting trip: $e');
-      return null;
-    }
-  }
-
-  // Yeni gezi ekle
-  Future<void> addTrip(Trip trip) async {
-    try {
-      await _firestore.collection('trips').add(trip.toFirestore());
-    } catch (e) {
-      print('Error adding trip: $e');
-      rethrow;
-    }
-  }
-
-  // Gezi güncelle
-  Future<void> updateTrip(String tripId, Trip trip) async {
-    try {
-      await _firestore.collection('trips').doc(tripId).update(trip.toFirestore());
+      await _db.collection('trips').doc(trip.id).update(trip.toJson());
     } catch (e) {
       print('Error updating trip: $e');
       rethrow;
     }
   }
 
-  // Gezi sil
   Future<void> deleteTrip(String tripId) async {
     try {
-      await _firestore.collection('trips').doc(tripId).delete();
+      await _db.collection('trips').doc(tripId).delete();
     } catch (e) {
       print('Error deleting trip: $e');
       rethrow;
     }
   }
-} 
+
+  Stream<List<Trip>> getTripsByCategory(String categoryId) {
+    return _db
+        .collection('trips')
+        .where('categories', arrayContains: categoryId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) {
+              final data = doc.data();
+              return Trip(
+                id: doc.id,
+                title: data['title'] ?? '',
+                description: data['description'] ?? '',
+                imageUrl: data['imageUrl'] ?? '',
+                price: (data['price'] as num?)?.toDouble() ?? 0.0,
+                location: data['location'] ?? '',
+                startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+                endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 1)),
+                categories: List<String>.from(data['categories'] ?? []),
+                status: TripStatus.values.firstWhere(
+                  (e) => e.toString().split('.').last == (data['status'] ?? 'AVAILABLE'),
+                  orElse: () => TripStatus.AVAILABLE,
+                ),
+                createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+                duration: (data['duration'] as num?)?.toInt() ?? 1,
+                capacity: (data['capacity'] as num?)?.toInt() ?? 10,
+              );
+            })
+            .toList());
+  }
+
+  Future<Trip> getTrip(String id) async {
+    try {
+      final doc = await _db.collection('trips').doc(id).get();
+      if (!doc.exists) {
+        throw Exception('Trip not found');
+      }
+      final data = doc.data()!;
+      return Trip(
+        id: doc.id,
+        title: data['title'] ?? '',
+        description: data['description'] ?? '',
+        imageUrl: data['imageUrl'] ?? '',
+        price: (data['price'] as num?)?.toDouble() ?? 0.0,
+        location: data['location'] ?? '',
+        startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        endDate: (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 1)),
+        categories: List<String>.from(data['categories'] ?? []),
+        status: TripStatus.values.firstWhere(
+          (e) => e.toString().split('.').last == (data['status'] ?? 'AVAILABLE'),
+          orElse: () => TripStatus.AVAILABLE,
+        ),
+        createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+        duration: (data['duration'] as num?)?.toInt() ?? 1,
+        capacity: (data['capacity'] as num?)?.toInt() ?? 10,
+      );
+    } catch (e) {
+      print('Error getting trip: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> addTrip(Trip trip) async {
+    try {
+      await _db.collection('trips').doc(trip.id).set(trip.toJson());
+    } catch (e) {
+      print('Error adding trip: $e');
+      rethrow;
+    }
+  }
+}

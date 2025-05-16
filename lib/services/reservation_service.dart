@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/reservation.dart';
-import '../models/admin_user.dart';
-import '../models/trip.dart';
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -189,7 +187,7 @@ class ReservationService {
         .get();
 
     for (var doc in querySnapshot.docs) {
-      final reservation = Reservation.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+      final reservation = Reservation.fromFirestore(doc.id, doc.data());
       
       // Tarih çakışması kontrolü
       if (!(endDate.isBefore(reservation.startDate) || 

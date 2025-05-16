@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/category.dart';
 import '../models/trip.dart';
 
@@ -17,8 +16,6 @@ class FirebaseService {
   /// Firestore instance.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Firebase Auth instance.
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// Uploads initial categories to Firestore if they don't exist.
   Future<void> uploadCategories() async {
@@ -77,23 +74,14 @@ class FirebaseService {
         'id': trip.id,
         'categories': trip.categories,
         'title': trip.title,
-        'tripType': trip.type,
-        'season': trip.season.toString(),
-        'duration': trip.duration.toString(),
+
         'imageUrl': trip.imageUrl,
-        'activities': trip.activities,
-        'program': trip.program,
         'description': trip.description,
         'location': trip.location,
         'price': trip.price,
         'startDate': trip.startDate.toIso8601String(),
         'endDate': trip.endDate.toIso8601String(),
-        'capacity': trip.capacity,
         'status': trip.status,
-        'isFamilyFriendly': trip.isFamilyFriendly,
-        'createdAt': trip.createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
-        'groupSize': trip.groupSize,
-        'difficulty': trip.difficulty,
       });
       print('Trip added successfully!');
     } catch (e) {
@@ -125,23 +113,13 @@ class FirebaseService {
           id: data['id'],
           categories: List<String>.from(data['categories']),
           title: data['title'],
-          type: data['tripType'],
-          season: data['season'],
           imageUrl: data['imageUrl'],
-          duration: int.parse(data['duration'].toString()),
-          activities: List<String>.from(data['activities']),
-          program: data['program'] ?? '',
           description: data['description'] ?? '',
           location: data['location'] ?? 'Location not specified',
           price: (data['price'] as num?)?.toDouble() ?? 0.0,
           startDate: data['startDate'] != null ? DateTime.parse(data['startDate'] as String) : DateTime.now(),
           endDate: data['endDate'] != null ? DateTime.parse(data['endDate'] as String) : DateTime.now().add(const Duration(days: 1)),
-          capacity: data['capacity'] ?? 10,
           status: data['status'] ?? 'active',
-          isFamilyFriendly: data['isFamilyFriendly'] ?? false,
-          createdAt: data['createdAt'] != null ? DateTime.parse(data['createdAt'] as String) : DateTime.now(),
-          groupSize: data['groupSize'] ?? 10,
-          difficulty: data['difficulty'] ?? 'Orta',
         );
       }).toList();
     });
@@ -152,20 +130,14 @@ class FirebaseService {
     try {
       await _firestore.collection('trips').doc(trip.id).update({
         'title': trip.title,
-        'tripType': trip.type,
-        'season': trip.season.toString(),
-        'duration': trip.duration.toString(),
-        'activities': trip.activities,
-        'program': trip.program,
+
         'imageUrl': trip.imageUrl,
         'description': trip.description,
         'location': trip.location,
         'price': trip.price,
         'startDate': trip.startDate.toIso8601String(),
         'endDate': trip.endDate.toIso8601String(),
-        'capacity': trip.capacity,
         'status': trip.status,
-        'isFamilyFriendly': trip.isFamilyFriendly,
       });
       print('Trip updated successfully!');
     } catch (e) {

@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
-import '../services/reservation_service.dart';
-import '../services/favorite_service.dart';
-import '../models/reservation.dart';
-import '../models/trip.dart';
+
+
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -17,8 +15,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
-  final ReservationService _reservationService = ReservationService();
-  final FavoriteService _favoriteService = FavoriteService();
+
   final _formKey = GlobalKey<FormState>();
   
   bool _isLoading = true;

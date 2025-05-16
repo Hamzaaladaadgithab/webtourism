@@ -17,10 +17,20 @@ class _AddTourScreenState extends State<AddTourScreen> {
   final _locationController = TextEditingController();
   final _priceController = TextEditingController();
   final _imageUrlController = TextEditingController();
+  final _durationController = TextEditingController(text: '1');
+  final _capacityController = TextEditingController(text: '10');
   DateTime? _startDate;
   DateTime? _endDate;
-  List<String> _activities = [];
   bool _isLoading = false;
+  List<String> _selectedCategories = [];
+  
+  // Sabit kategori listesi
+  final List<String> _availableCategories = [
+    'Doğa Turizmi',
+    'Kültür Turizmi',
+    'Macera Turizmi',
+    'Eğitim Turizmi'
+  ];
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
@@ -40,21 +50,13 @@ class _AddTourScreenState extends State<AddTourScreen> {
         description: _descriptionController.text,
         location: _locationController.text,
         price: double.parse(_priceController.text),
-        duration: _endDate!.difference(_startDate!).inDays + 1,
-        type: 'CULTURAL',
-        season: 'SUMMER',
-        categories: ['nature'],
+        categories: _selectedCategories,
         imageUrl: _imageUrlController.text,
-        program: '',
-        activities: _activities,
         startDate: _startDate!,
         endDate: _endDate!,
-        capacity: 20,
-        isFamilyFriendly: false,
         status: TripStatus.AVAILABLE,
-        createdAt: DateTime.now(),
-        groupSize: 10,
-        difficulty: 'Orta',
+        duration: int.parse(_durationController.text),
+        capacity: int.parse(_capacityController.text),
       );
 
       await FirebaseFirestore.instance.collection('trips').doc(trip.id).set(trip.toFirestore());
@@ -157,6 +159,55 @@ class _AddTourScreenState extends State<AddTourScreen> {
                           },
                         ),
                         const SizedBox(height: 15),
+                        // Süre ve Kapasite
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _durationController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Süre (Gün)',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.timer),
+                                ),
+                                keyboardType: TextInputType.number,
+                                textInputAction: TextInputAction.next,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Süre gerekli';
+                                  }
+                                  if (int.tryParse(value) == null || int.parse(value) < 1) {
+                                    return 'Geçerli bir süre girin';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _capacityController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Kapasite',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.group),
+                                ),
+                                keyboardType: TextInputType.number,
+                                textInputAction: TextInputAction.next,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Kapasite gerekli';
+                                  }
+                                  if (int.tryParse(value) == null || int.parse(value) < 1) {
+                                    return 'Geçerli bir kapasite girin';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 15),
                         TextFormField(
                           controller: _priceController,
                           decoration: const InputDecoration(
@@ -194,37 +245,121 @@ class _AddTourScreenState extends State<AddTourScreen> {
                           },
                         ),
                         const SizedBox(height: 15),
+                        // Kategori seçimi
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Kategoriler', style: TextStyle(fontSize: 16)),
+                            SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Column(
+                                children: _availableCategories.map((category) {
+                                  return CheckboxListTile(
+                                    title: Text(category),
+                                    value: _selectedCategories.contains(category),
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _selectedCategories.add(category);
+                                        } else {
+                                          _selectedCategories.remove(category);
+                                        }
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+
+                        const SizedBox(height: 15),
+                        // Kategoriler Seçimi
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Kategoriler',
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getFontSize(context, 16),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: _availableCategories.map((category) {
+                                return FilterChip(
+                                  label: Text(category),
+                                  selected: _selectedCategories.contains(category),
+                                  selectedColor: Colors.blue.shade100,
+                                  checkmarkColor: Colors.blue.shade900,
+                                  onSelected: (bool selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedCategories.add(category);
+                                      } else {
+                                        _selectedCategories.remove(category);
+                                      }
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 15),
                         ListTile(
-                          title: Text(_startDate == null 
-                            ? 'Başlangıç Tarihi Seçin' 
-                            : 'Başlangıç: ${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'),
-                          trailing: const Icon(Icons.calendar_today),
+                          title: Text(
+                            'Tarih Aralığı',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            _startDate != null && _endDate != null
+                                ? '${_startDate?.toString().split(' ')[0]} - ${_endDate?.toString().split(' ')[0]}'
+                                : 'Tarih aralığı seçilmedi',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          trailing: const Icon(Icons.date_range),
                           onTap: () async {
-                            final date = await showDatePicker(
+                            final DateTimeRange? dateRange = await showDateRangePicker(
                               context: context,
-                              initialDate: DateTime.now(),
                               firstDate: DateTime.now(),
                               lastDate: DateTime.now().add(const Duration(days: 365)),
+                              initialDateRange: _startDate != null && _endDate != null
+                                  ? DateTimeRange(start: _startDate!, end: _endDate!)
+                                  : null,
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: Colors.blue.shade900,
+                                      onPrimary: Colors.white,
+                                      surface: Colors.white,
+                                      onSurface: Colors.black,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
                             );
-                            if (date != null) {
-                              setState(() => _startDate = date);
-                            }
-                          },
-                        ),
-                        ListTile(
-                          title: Text(_endDate == null 
-                            ? 'Bitiş Tarihi Seçin' 
-                            : 'Bitiş: ${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'),
-                          trailing: const Icon(Icons.calendar_today),
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _startDate ?? DateTime.now(),
-                              firstDate: _startDate ?? DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() => _endDate = date);
+
+                            if (dateRange != null) {
+                              setState(() {
+                                _startDate = dateRange.start;
+                                _endDate = dateRange.end;
+                              });
                             }
                           },
                         ),
@@ -270,6 +405,8 @@ class _AddTourScreenState extends State<AddTourScreen> {
     _locationController.dispose();
     _priceController.dispose();
     _imageUrlController.dispose();
+    _durationController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 }

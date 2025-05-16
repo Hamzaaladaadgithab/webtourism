@@ -3,12 +3,12 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:tourism/models/trip.dart';
 import 'package:tourism/screens/category_trips_screen.dart';
 import './screens/tabs_screen.dart';
+
 import 'package:tourism/screens/trip_detail_screen.dart';
 import 'package:tourism/screens/make_reservation_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'services/firebase_service.dart';
-import 'services/data_service.dart';
+
 import 'services/admin_service.dart';
 import 'screens/WelcomeScreen.dart';
 import 'auth/userLoginScreen.dart';
@@ -20,6 +20,7 @@ import 'admin/manage_tours_screen.dart';
 import 'admin/manage_reservations_screen.dart';
 import 'admin/edit_tour_screen.dart';
 import 'admin/manage_users_screen.dart';
+import 'screens/categories_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,42 +49,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final DataService _dataService = DataService();
-  List<Trip> _availableTrips = [];
   List<Trip> _favoriteTrips = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _setupDataStream();
-  }
-
-  void _setupDataStream() {
-    _dataService.getTripsStream().listen((trips) {
-      setState(() {
-        _availableTrips = trips;
-      });
-    });
-  }
-
-  void _toggleFavorite(String tripId) {
-    final existingIndex = _favoriteTrips.indexWhere((trip) => trip.id == tripId);
-    if (existingIndex >= 0) {
-      setState(() {
-        _favoriteTrips.removeAt(existingIndex);
-      });
-    } else {
-      setState(() {
-        _favoriteTrips.add(
-          _availableTrips.firstWhere((trip) => trip.id == tripId),
-        );
-      });
-    }
-  }
-
-  bool _isFavorite(String id) {
-    return _favoriteTrips.any((trip) => trip.id == id);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,12 +63,12 @@ class _MyAppState extends State<MyApp> {
       initialRoute: '/',
       routes: {
         '/': (ctx) => WelcomeScreen(),
-        UserLoginScreen.routeName: (ctx) => UserLoginScreen(),
-        UserSignUpScreen.routeName: (ctx) => UserSignUpScreen(),
-        AdminLoginScreen.routeName: (ctx) => AdminLoginScreen(),
-        TabsScreen.routeName: (ctx) => TabsScreen(_favoriteTrips),
-        CategoryTripsScreen.routeName: (ctx) => CategoryTripsScreen(),
-        TripDetailScreen.routeName: (context) {
+        '/user-login': (ctx) => UserLoginScreen(),
+        '/user-signup': (ctx) => UserSignUpScreen(),
+        '/admin-login': (ctx) => AdminLoginScreen(),
+        '/tabs': (ctx) => TabsScreen(_favoriteTrips),
+        '/category-trips': (ctx) => CategoryTripsScreen(),
+        '/trip-detail': (context) {
           final route = ModalRoute.of(context);
           if (route == null) return const MaterialApp(home: Center(child: CircularProgressIndicator()));
           
@@ -119,11 +85,13 @@ class _MyAppState extends State<MyApp> {
           
           return TripDetailScreen(trip: args);
         },
-        AdminHomeScreen.routeName: (ctx) => AdminHomeScreen(),
-        AddTourScreen.routeName: (ctx) => AddTourScreen(),
-        ManageToursScreen.routeName: (ctx) => ManageToursScreen(),
-        ManageReservationsScreen.routeName: (ctx) => ManageReservationsScreen(),
-        ManageUsersScreen.routeName: (ctx) => ManageUsersScreen(),
+        '/admin-home': (ctx) => AdminHomeScreen(),
+        '/add-tour': (ctx) => AddTourScreen(),
+        '/manage-tours': (ctx) => ManageToursScreen(),
+        '/manage-reservations': (ctx) => ManageReservationsScreen(),
+        '/manage-users': (ctx) => ManageUsersScreen(),
+
+        CategoriesScreen.routeName: (ctx) => const CategoriesScreen(),
         '/edit-tour': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Trip;
           return EditTourScreen(trip: args);
@@ -132,6 +100,7 @@ class _MyAppState extends State<MyApp> {
           final trip = ModalRoute.of(context)!.settings.arguments as Trip;
           return MakeReservationScreen(trip: trip);
         },
+
       },
     );
   }

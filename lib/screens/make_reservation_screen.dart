@@ -22,14 +22,50 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
   final _notesController = TextEditingController();
   
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));
-  DateTime _endDate = DateTime.now().add(const Duration(days: 1));
+  DateTime _endDate = DateTime.now().add(const Duration(days: 2));
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange: DateTimeRange(
+        start: _startDate,
+        end: _endDate,
+      ),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              surface: Theme.of(context).primaryColor,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+    }
+  }
   int _numberOfPeople = 1;
   bool _isLoading = false;
   
   final ReservationService _reservationService = ReservationService();
   final AuthService _authService = AuthService();
 
-  double get _totalPrice => widget.trip.price * _numberOfPeople;
+  double get _totalPrice => widget.trip.price * _numberOfPeople * _calculateDays();
+
+  int _calculateDays() {
+    return _endDate.difference(_startDate).inDays + 1;
+  }
 
   @override
   void initState() {
@@ -64,34 +100,6 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
     _phoneController.dispose();
     _notesController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectDateRange(BuildContext context) async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.blue,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-    }
   }
 
   Future<void> _makeReservation() async {

@@ -21,44 +21,24 @@ class _EditTourScreenState extends State<EditTourScreen> {
   late TextEditingController _descriptionController;
   late TextEditingController _locationController;
   late TextEditingController _priceController;
-  late TextEditingController _durationController;
   late TextEditingController _imageUrlController;
 
-  String _selectedType = '';
-  String _selectedSeason = '';
   List<String> _selectedCategories = [];
-  List<String> _selectedActivities = [];
-  bool _isFamilyFriendly = false;
-  int _capacity = 0;
-  String _program = '';
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void initState() {
     super.initState();
-    // Mevcut verileri controller'lara yükle
-    _titleController.text = widget.trip.title;
-    _descriptionController.text = widget.trip.description;
-    _locationController.text = widget.trip.location;
-    _priceController.text = widget.trip.price.toString();
-    _durationController.text = widget.trip.duration.toString();
-    _imageUrlController.text = widget.trip.imageUrl;
-    _selectedCategories = List<String>.from(widget.trip.categories);
-    _selectedActivities = List<String>.from(widget.trip.activities);
-    _selectedSeason = widget.trip.season;
-    _selectedType = widget.trip.type;
-    _isFamilyFriendly = widget.trip.isFamilyFriendly;
-    _capacity = widget.trip.capacity;
-    _program = widget.trip.program;
     _titleController = TextEditingController(text: widget.trip.title);
     _descriptionController = TextEditingController(text: widget.trip.description);
     _locationController = TextEditingController(text: widget.trip.location);
     _priceController = TextEditingController(text: widget.trip.price.toString());
-    _durationController = TextEditingController(text: widget.trip.duration.toString());
     _imageUrlController = TextEditingController(text: widget.trip.imageUrl);
 
-    _selectedType = widget.trip.type;
-    _selectedSeason = widget.trip.season;
     _selectedCategories = List<String>.from(widget.trip.categories);
+    _startDate = widget.trip.startDate;
+    _endDate = widget.trip.endDate;
   }
 
   @override
@@ -67,7 +47,6 @@ class _EditTourScreenState extends State<EditTourScreen> {
     _descriptionController.dispose();
     _locationController.dispose();
     _priceController.dispose();
-    _durationController.dispose();
     _imageUrlController.dispose();
     super.dispose();
   }
@@ -84,21 +63,12 @@ class _EditTourScreenState extends State<EditTourScreen> {
         description: _descriptionController.text,
         location: _locationController.text,
         price: double.parse(_priceController.text),
-        duration: int.parse(_durationController.text),
-        type: _selectedType,
-        season: _selectedSeason,
+
         categories: _selectedCategories,
         imageUrl: _imageUrlController.text,
-        program: widget.trip.program,
-        activities: widget.trip.activities,
-        startDate: widget.trip.startDate,
-        endDate: widget.trip.endDate,
-        capacity: widget.trip.capacity,
+        startDate: _startDate!,
+        endDate: _endDate!,
         status: widget.trip.status,
-        isFamilyFriendly: widget.trip.isFamilyFriendly,
-        createdAt: widget.trip.createdAt,
-        groupSize: widget.trip.groupSize,
-        difficulty: widget.trip.difficulty,
       );
 
       await _adminService.updateTrip(updatedTrip);
@@ -217,23 +187,47 @@ class _EditTourScreenState extends State<EditTourScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _durationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Süre (Gün)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen süre girin';
-                        }
-                        if (int.tryParse(value) == null) {
-                          return 'Geçerli bir sayı girin';
-                        }
-                        return null;
-                      },
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ListTile(
+                            title: const Text('Başlangıç Tarihi'),
+                            subtitle: Text(_startDate == null
+                                ? 'Seçilmedi'
+                                : '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'),
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _startDate ?? DateTime.now(),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime(2025),
+                              );
+                              if (picked != null) {
+                                setState(() => _startDate = picked);
+                              }
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: ListTile(
+                            title: const Text('Bitiş Tarihi'),
+                            subtitle: Text(_endDate == null
+                                ? 'Seçilmedi'
+                                : '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'),
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _endDate ?? (_startDate?.add(const Duration(days: 1)) ?? DateTime.now()),
+                                firstDate: _startDate ?? DateTime.now(),
+                                lastDate: DateTime(2025),
+                              );
+                              if (picked != null) {
+                                setState(() => _endDate = picked);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -244,54 +238,6 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         labelText: 'Resim URL',
                         border: OutlineInputBorder(),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedType,
-                      decoration: const InputDecoration(
-                        labelText: 'Tur Tipi',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'individual', child: Text('Bireysel')),
-                        DropdownMenuItem(value: 'group', child: Text('Grup')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _selectedType = value);
-                        }
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen tur tipi seçin';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedSeason,
-                      decoration: const InputDecoration(
-                        labelText: 'Sezon',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'summer', child: Text('Yaz')),
-                        DropdownMenuItem(value: 'winter', child: Text('Kış')),
-                        DropdownMenuItem(value: 'spring', child: Text('İlkbahar')),
-                        DropdownMenuItem(value: 'autumn', child: Text('Sonbahar')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _selectedSeason = value);
-                        }
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen sezon seçin';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
                     Text(
