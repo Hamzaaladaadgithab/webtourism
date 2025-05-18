@@ -3,17 +3,19 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:tourism/models/trip.dart';
 import 'package:tourism/screens/category_trips_screen.dart';
 import './screens/tabs_screen.dart';
-
 import 'package:tourism/screens/trip_detail_screen.dart';
 import 'package:tourism/screens/make_reservation_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+
+import 'firebase_options.dart';
 import 'services/admin_service.dart';
 import 'screens/WelcomeScreen.dart';
 import 'auth/userLoginScreen.dart';
 import 'auth/userSignUpScreen.dart';
-import 'auth/AdminLoginScreen.dart';
+import 'auth/adminLoginScreen.dart';
 import 'admin/admin_home_screen.dart';
 import 'admin/add_tour_screen.dart';
 import 'admin/manage_tours_screen.dart';
@@ -22,15 +24,39 @@ import 'admin/edit_tour_screen.dart';
 import 'admin/manage_users_screen.dart';
 import 'screens/categories_screen.dart';
 
+// Debug flag for development
+const bool debug = true;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR', null);
   
   try {
+    // Firebase'i başlat
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
     print('Firebase başarıyla başlatıldı!');
+
+    // Önce mevcut oturumu kapat
+    await FirebaseAuth.instance.signOut();
+
+    // Firebase Auth'u dinle
+    FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+      if (user == null) {
+        print('Kullanıcı oturumu kapalı');
+      } else {
+        try {
+          // Token'i yenile
+          await user.getIdToken(true);
+          print('Kullanıcı oturum açtı: ${user.email}');
+        } catch (e) {
+          print('Token yenileme hatası: $e');
+          await FirebaseAuth.instance.signOut();
+        }
+      }
+    });
 
     // İlk admin kullanıcısını oluştur
     final adminService = AdminService();
@@ -38,6 +64,15 @@ void main() async {
     print('İlk admin kullanıcısı oluşturuldu veya zaten mevcut.');
   } catch (e) {
     print('Firebase başlatma hatası: $e');
+    // Hata durumunda uygulama çökmemeli
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Bağlantı hatası: Lütfen internet bağlantınızı kontrol edin'),
+        ),
+      ),
+    ));
+    return;
   }
 
   runApp(MyApp());
@@ -91,14 +126,25 @@ class _MyAppState extends State<MyApp> {
         '/manage-reservations': (ctx) => ManageReservationsScreen(),
         '/manage-users': (ctx) => ManageUsersScreen(),
 
-        CategoriesScreen.routeName: (ctx) => const CategoriesScreen(),
+        CategoriesScreen.routeName: (ctx) => CategoriesScreen(),
         '/edit-tour': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Trip;
           return EditTourScreen(trip: args);
         },
         '/make-reservation': (context) {
-          final trip = ModalRoute.of(context)!.settings.arguments as Trip;
-          return MakeReservationScreen(trip: trip);
+          final route = ModalRoute.of(context);
+          if (route == null) return Center(child: CircularProgressIndicator());
+
+          final args = route.settings.arguments;
+          if (args == null || args is! Trip) {
+            return Scaffold(
+              body: Center(
+                child: Text('Tur bilgisi bulunamadı'),
+              ),
+            );
+          }
+
+          return MakeReservationScreen(trip: args);
         },
 
       },

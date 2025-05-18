@@ -24,43 +24,105 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      print('Giriş denemesi: ${_emailController.text.trim()}');
+      
+      // Firebase Auth ile giriş yap
+      final auth = FirebaseAuth.instance;
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      // Önce mevcut oturumu kapat
+      await auth.signOut();
+
+      // Yeni giriş denemesi
+      final userCredential = await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
+
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception('Kullanıcı girişi başarısız');
+      }
+
+      // Token'i yenile
+      await user.getIdToken(true);
+
+      // Admin kontrolü
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(user.uid)
+          .get();
+
+      if (adminDoc.exists) {
+        await auth.signOut(); // Admin hesabıyla normal giriş engellensin
+        throw Exception('Bu hesap bir admin hesabıdır. Lütfen admin girişi yapın.');
+      }
 
       // Firestore'da kullanıcı dokümanını kontrol et
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(userCredential.user!.uid)
+          .doc(user.uid)
           .get();
 
-      // Eğer kullanıcı dokümanı yoksa oluştur
+      final batch = FirebaseFirestore.instance.batch();
+      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
       if (!userDoc.exists) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userCredential.user!.uid)
-            .set({
-          'email': _emailController.text.trim(),
-          'name': userCredential.user!.email!.split('@')[0],
+        // Yeni kullanıcı oluştur
+        batch.set(userRef, {
+          'uid': user.uid,
+          'email': email,
+          'name': email.split('@')[0],
           'phone': '',
           'role': 'user',
-          'createdAt': DateTime.now(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
           'favorites': [],
+          'isActive': true,
+          'photoUrl': user.photoURL ?? '',
         });
+        print('Yeni kullanıcı dokümanı oluşturulacak');
+      } else {
+        // Mevcut kullanıcıyı güncelle
+        batch.update(userRef, {
+          'lastLogin': FieldValue.serverTimestamp(),
+          'isActive': true,
+        });
+        print('Kullanıcı giriş zamanı güncellenecek');
       }
+
+      // Batch işlemini gerçekleştir
+      await batch.commit();
+      print('Firestore işlemleri tamamlandı');
+
+      print('Giriş başarılı: ${user.email}');
 
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(TabsScreen.routeName);
     } catch (error) {
+      print('Hata detayı: $error');
       var message = 'Bir hata oluştu!';
+      
       if (error.toString().contains('user-not-found')) {
         message = 'Kullanıcı bulunamadı!';
       } else if (error.toString().contains('wrong-password')) {
         message = 'Yanlış şifre!';
+      } else if (error.toString().contains('invalid-email')) {
+        message = 'Geçersiz e-posta adresi!';
+      } else if (error.toString().contains('admin hesabı')) {
+        message = error.toString();
       }
+
+      print('Hata mesajı: $message');
+      
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
       );
     } finally {
       if (mounted) {

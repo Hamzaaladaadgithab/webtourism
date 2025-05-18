@@ -13,11 +13,30 @@ class AuthService {
   // Email/Password ile giriş
   Future<UserCredential> signInWithEmailAndPassword(String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+      // E-posta ve şifre kontrolü
+      if (email.isEmpty || !email.contains('@')) {
+        throw FirebaseAuthException(code: 'invalid-email');
+      }
+      if (password.isEmpty || password.length < 6) {
+        throw FirebaseAuthException(code: 'weak-password');
+      }
+
+      // Giriş denemesi
+      print('Giriş denemesi: $email'); // Debug için
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
       );
+
+      // Kullanıcı token'ını yenile
+      if (userCredential.user != null) {
+        await userCredential.user!.reload();
+      }
+      
+      print('Giriş başarılı: ${userCredential.user?.email}'); // Debug için
+      return userCredential;
     } catch (e) {
+      print('Giriş hatası: $e'); // Debug için
       throw _handleAuthError(e);
     }
   }
@@ -60,11 +79,24 @@ class AuthService {
   // Kullanıcı rolünü kontrol et
   Future<bool> isAdmin(String userId) async {
     try {
+      if (userId.isEmpty) {
+        print('Kullanıcı ID boş');
+        return false;
+      }
+
       // Önce admins koleksiyonunda kontrol et
       final adminDoc = await _firestore.collection('admins').doc(userId).get();
+      
       if (adminDoc.exists) {
+        print('Admin bulundu: $userId');
+        // Son giriş zamanını güncelle
+        await _firestore.collection('admins').doc(userId).update({
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
         return true;
       }
+      
+      print('Admin bulunamadı: $userId');
       return false;
     } catch (e) {
       print('Admin kontrolü sırasında hata: $e');
@@ -154,12 +186,16 @@ class AuthService {
 
   // Hata mesajlarını düzenle
   String _handleAuthError(dynamic error) {
+    print('Auth Error: $error'); // Debug için
+    
     if (error is FirebaseAuthException) {
       switch (error.code) {
         case 'user-not-found':
           return 'Bu email adresi ile kayıtlı kullanıcı bulunamadı';
         case 'wrong-password':
           return 'Hatalı şifre';
+        case 'invalid-credential':
+          return 'Giriş bilgileri hatalı! Lütfen email ve şifrenizi kontrol edin.';
         case 'email-already-in-use':
           return 'Bu email adresi zaten kullanımda';
         case 'invalid-email':
@@ -170,10 +206,14 @@ class AuthService {
           return 'Bu işlem şu anda kullanılamıyor';
         case 'too-many-requests':
           return 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin';
+        case 'network-request-failed':
+          return 'İnternet bağlantısı hatası! Lütfen bağlantınızı kontrol edin.';
+        case 'user-disabled':
+          return 'Bu hesap devre dışı bırakılmış.';
         default:
           return 'Bir hata oluştu: ${error.message}';
       }
     }
-    return 'Beklenmeyen bir hata oluştu';
+    return 'Beklenmeyen bir hata oluştu: $error';
   }
 }

@@ -522,20 +522,30 @@ class _MakeReservationScreenState extends State<MakeReservationScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Toplam Tutar',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey,
+                                Flexible(
+                                  flex: 1,
+                                  child: const Text(
+                                    'Toplam Tutar',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                Text(
-                                  '${_totalPrice.toStringAsFixed(2)} TL',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  flex: 2,
+                                  child: Text(
+                                    '${_totalPrice.toStringAsFixed(2)} TL',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.end,
                                   ),
                                 ),
                               ],

@@ -40,7 +40,7 @@ class AdminService {
         if (adminDoc.exists) {
           // Son giriş zamanını güncelle
           await adminDoc.reference.update({
-            'lastLogin': DateTime.now().toIso8601String(),
+            'lastLogin': FieldValue.serverTimestamp(),
           });
 
           return AdminUser.fromFirestore(
@@ -93,42 +93,59 @@ class AdminService {
   // İlk admin kullanıcısını oluştur
   Future<void> createInitialAdmin() async {
     try {
-      // Firebase Authentication'da kullanıcı oluştur veya giriş yap
+      // Önce mevcut admin kontrolü yap
+      final adminDocs = await _firestore.collection('admins').get();
+      if (adminDocs.docs.isNotEmpty) {
+        print('Admin zaten mevcut');
+        return;
+      }
+
+      // Firebase Authentication'da kullanıcı oluştur
       UserCredential? userCredential;
       try {
-        // Önce yeni kullanıcı oluşturmayı dene
         userCredential = await _auth.createUserWithEmailAndPassword(
           email: 'aladaada5105390@gmail.com',
           password: '123456',
         );
-        print('Yeni kullanıcı oluşturuldu');
-      } catch (e) {
-        // Eğer kullanıcı zaten varsa, giriş yap
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email: 'aladaada5105390@gmail.com',
-          password: '123456',
-        );
-        print('Mevcut kullanıcıya giriş yapıldı');
+        print('Yeni admin kullanıcısı oluşturuldu');
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          // Kullanıcı zaten varsa, giriş yap
+          userCredential = await _auth.signInWithEmailAndPassword(
+            email: 'aladaada5105390@gmail.com',
+            password: '123456',
+          );
+          print('Mevcut admin kullanıcısına giriş yapıldı');
+        } else {
+          print('Firebase Auth hatası: ${e.message}');
+          rethrow;
+        }
       }
 
-      // Kullanıcı ID'sini al
-      final uid = userCredential.user!.uid;
-      print('Kullanıcı ID: $uid');
+      if (userCredential?.user == null) {
+        throw Exception('Kullanıcı oluşturulamadı veya giriş yapılamadı');
+      }
 
-      // Firestore'da admin kaydını oluştur veya güncelle
-      await _firestore.collection('admins').doc(uid).set({
+      final uid = userCredential.user!.uid;
+      
+      // Admin verilerini hazırla
+      final adminData = {
         'email': 'aladaada5105390@gmail.com',
         'name': 'Admin',
         'role': 'admin',
         'permissions': ['all'],
-        'createdAt': '2025-05-11T18:39:08.011',
-        'lastLogin': '2025-05-11T18:39:08.011',
-      }, SetOptions(merge: true));
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastLogin': FieldValue.serverTimestamp(),
+        'uid': uid
+      };
 
-      print('Admin kaydı güncellendi/oluşturuldu');
+      // Firestore'da admin kaydını oluştur
+      await _firestore.collection('admins').doc(uid).set(
+        adminData,
+        SetOptions(merge: true)
+      );
 
-      // Mevcut admins koleksiyonunu kontrol et
-      final adminDocs = await _firestore.collection('admins').get();
+      print('Admin kaydı başarıyla oluşturuldu. ID: $uid');
       print('Toplam admin sayısı: ${adminDocs.docs.length}');
       for (var doc in adminDocs.docs) {
         print('Admin ID: ${doc.id}, Data: ${doc.data()}');
@@ -214,8 +231,8 @@ class AdminService {
         'name': name,
         'role': 'admin',
         'permissions': permissions,
-        'createdAt': DateTime.now().toIso8601String(),
-        'lastLogin': DateTime.now().toIso8601String(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastLogin': FieldValue.serverTimestamp(),
         'status': 'active',
       });
     } catch (e) {
@@ -302,8 +319,8 @@ class AdminService {
     final user = _auth.currentUser;
     if (user == null) return false;
 
-    final userDoc = await _firestore.collection('users').doc(user.uid).get();
-    return userDoc.exists && userDoc.data()?['role'] == 'admin';
+    final adminDoc = await _firestore.collection('admins').doc(user.uid).get();
+    return adminDoc.exists;
   }
 
   // Tüm turları getir
@@ -342,15 +359,33 @@ class AdminService {
   }
 
   // Rezervasyon durumunu güncelle
-  Future<void> updateReservationStatus(String reservationId, String status) async {
+  Future<void> updateReservation(String reservationId, {required String status, String? cancelReason}) async {
     await _verifyAdminAccess();
     if (!await isCurrentUserAdmin()) {
       throw Exception('Bu işlem için admin yetkisi gerekiyor');
     }
+
+    final Map<String, dynamic> updateData = {
+      'status': status,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    };
+
+    if (cancelReason != null) {
+      updateData['cancelReason'] = cancelReason;
+    }
+
     await _firestore
         .collection('reservations')
         .doc(reservationId)
-        .update({'status': status});
+        .update(updateData);
+  }
+
+  Future<void> deleteReservation(String reservationId) async {
+    await _verifyAdminAccess();
+    if (!await isCurrentUserAdmin()) {
+      throw Exception('Bu işlem için admin yetkisi gerekiyor');
+    }
+    await _firestore.collection('reservations').doc(reservationId).delete();
   }
 
   // Tüm kullanıcıları getir

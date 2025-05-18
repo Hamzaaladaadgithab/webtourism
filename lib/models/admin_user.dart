@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class AdminUser {
   final String id;
   final String email;
@@ -6,6 +8,7 @@ class AdminUser {
   final List<String> permissions;
   final DateTime createdAt;
   final DateTime lastLogin;
+  final bool isActive;
 
   AdminUser({
     required this.id,
@@ -15,6 +18,7 @@ class AdminUser {
     required this.permissions,
     required this.createdAt,
     required this.lastLogin,
+    this.isActive = true,
   });
 
   factory AdminUser.fromFirestore(Map<String, dynamic> data, String id) {
@@ -25,11 +29,16 @@ class AdminUser {
       role: data['role'] ?? 'admin',
       permissions: List<String>.from(data['permissions'] ?? []),
       createdAt: data['createdAt'] != null 
-        ? DateTime.parse(data['createdAt']) 
+        ? (data['createdAt'] is Timestamp 
+            ? (data['createdAt'] as Timestamp).toDate()
+            : DateTime.parse(data['createdAt']))
         : DateTime.now(),
       lastLogin: data['lastLogin'] != null 
-        ? DateTime.parse(data['lastLogin']) 
+        ? (data['lastLogin'] is Timestamp 
+            ? (data['lastLogin'] as Timestamp).toDate()
+            : DateTime.parse(data['lastLogin']))
         : DateTime.now(),
+      isActive: data['isActive'] ?? true,
     );
   }
 
@@ -39,8 +48,9 @@ class AdminUser {
       'name': name,
       'role': role,
       'permissions': permissions,
-      'createdAt': createdAt.toIso8601String(),
-      'lastLogin': lastLogin.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastLogin': Timestamp.fromDate(lastLogin),
+      'isActive': isActive,
     };
   }
 
