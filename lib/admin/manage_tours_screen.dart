@@ -46,14 +46,7 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
         ),
         backgroundColor: Colors.blue.shade900,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.pushNamed(context, AddTourScreen.routeName);
-            },
-          ),
-        ],
+        centerTitle: true,
       ),
       body: Container(
         color: Colors.grey.shade50,

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
-
-
+import '../services/storage_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -12,37 +12,42 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
+  final StorageService _storageService = StorageService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   final _formKey = GlobalKey<FormState>();
-  
-  bool _isLoading = true;
+
+  bool _isLoading = false;
   bool _isEditing = false;
+  bool _isPasswordVisible = false;
+  bool _notificationsEnabled = true;
   String? _error;
   AppUser? _user;
-  late TabController _tabController;
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadUserData();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -70,6 +75,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _user = userData;
         _nameController.text = userData.name;
         _phoneController.text = userData.phone;
+        _emailController.text = userData.email;
+        _notificationsEnabled = userData.notificationsEnabled ?? true;
         _isLoading = false;
       });
     } catch (e) {
@@ -91,6 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       await _userService.updateUser(_user!.id, {
         'name': _nameController.text,
         'phone': _phoneController.text,
+        'notificationsEnabled': _notificationsEnabled,
       });
 
       if (_currentPasswordController.text.isNotEmpty &&
@@ -105,6 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _isEditing = false;
         _currentPasswordController.clear();
         _newPasswordController.clear();
+        _confirmPasswordController.clear();
       });
 
       if (!mounted) return;
@@ -128,188 +137,95 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
-  Widget _buildProfileHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.blue,
-            Colors.blue.withOpacity(0.8),
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.white,
-            child: Text(
-              _user?.name[0].toUpperCase() ?? 'U',
-              style: const TextStyle(
-                fontSize: 40,
-                color: Colors.blue,
-                fontWeight: FontWeight.bold,
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      setState(() => _isLoading = true);
+      final imageUrl = await _storageService.uploadProfileImage(_user!.id, image.path);
+      await _userService.updateUser(_user!.id, {'profileImage': imageUrl});
+      await _loadUserData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Resim yüklenirken hata: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _isEditing = false;
+      _nameController.text = _user?.name ?? '';
+      _phoneController.text = _user?.phone ?? '';
+      _emailController.text = _user?.email ?? '';
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmPasswordController.clear();
+    });
+  }
+
+  Future<void> _deleteAccount() async {
+    final TextEditingController passwordController = TextEditingController();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hesap Silme'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'DİKKAT: Bu işlem geri alınamaz!\n\n'
+              'Hesabınızı silmek istediğinizden emin misiniz?\n'
+              'Tüm verileriniz kalıcı olarak silinecektir.\n\n'
+              'Devam etmek için şifrenizi girin:',
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Şifre',
+                border: OutlineInputBorder(),
               ),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
           ),
-          const SizedBox(height: 16),
-          Text(
-            _user?.name ?? '',
-            style: const TextStyle(
-              fontSize: 24,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _user?.email ?? '',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Hesabımı Sil'),
           ),
         ],
       ),
     );
-  }
 
-  Widget _buildProfileForm() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Ad Soyad',
-                prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.blue),
-                ),
-              ),
-              enabled: _isEditing,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Lütfen adınızı girin';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneController,
-              decoration: InputDecoration(
-                labelText: 'Telefon',
-                prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.blue),
-                ),
-              ),
-              enabled: _isEditing,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Lütfen telefon numaranızı girin';
-                }
-                return null;
-              },
-            ),
-            if (_isEditing) ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _currentPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Mevcut Şifre',
-                  prefixIcon: const Icon(Icons.lock),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.blue),
-                  ),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _newPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Yeni Şifre',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.blue),
-                  ),
-                ),
-                obscureText: true,
-              ),
-            ],
-            const SizedBox(height: 24),
-            if (_isEditing)
-              ElevatedButton(
-                onPressed: _isLoading ? null : _updateProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Kaydet'),
-              )
-            else
-              ElevatedButton(
-                onPressed: () => setState(() => _isEditing = true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Düzenle'),
-              ),
-          ],
-        ),
-      ),
-    );
+    if (confirm ?? false) {
+      try {
+        setState(() => _isLoading = true);
+        // Önce kullanıcının kimliğini doğrula
+        await _authService.reauthenticateWithPassword(passwordController.text);
+        // Sonra hesabı sil
+        await _userService.deleteUser(_user!.id);
+        await _authService.deleteAccount();
+        if (!mounted) return;
+        Navigator.of(context).pushReplacementNamed('/login');
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hesap silinirken hata: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -318,31 +234,135 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadUserData,
-              child: const Text('Tekrar Dene'),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil'),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.cancel),
+              onPressed: _cancelEditing,
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => setState(() => _isEditing = true),
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            _buildProfileForm(),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _isEditing ? _pickImage : null,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: _user?.profileImage != null
+                            ? NetworkImage(_user!.profileImage!)
+                            : null,
+                        child: _user?.profileImage == null
+                            ? Text(
+                                _user?.name[0].toUpperCase() ?? 'U',
+                                style: const TextStyle(fontSize: 40),
+                              )
+                            : null,
+                      ),
+                      if (_isEditing)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _nameController,
+                  enabled: _isEditing,
+                  decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                  validator: (value) => value == null || value.isEmpty ? 'Ad gerekli' : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _phoneController,
+                  enabled: _isEditing,
+                  decoration: const InputDecoration(labelText: 'Telefon'),
+                  validator: (value) => value == null || value.isEmpty ? 'Telefon gerekli' : null,
+                ),
+                const SizedBox(height: 10),
+                if (_isEditing) ...[
+                  SwitchListTile(
+                    title: const Text('Bildirimleri Aç'),
+                    value: _notificationsEnabled,
+                    onChanged: (value) => setState(() => _notificationsEnabled = value),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _currentPasswordController,
+                    obscureText: !_isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Mevcut Şifre',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _isPasswordVisible = !_isPasswordVisible),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _newPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Yeni Şifre'),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Yeni Şifre (Tekrar)'),
+                    validator: (value) {
+                      if (_newPasswordController.text != value) {
+                        return 'Şifreler eşleşmiyor';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _updateProfile,
+                    child: const Text('Kaydet'),
+                  ),
+                  TextButton(
+                    onPressed: _deleteAccount,
+                    child: const Text(
+                      'Hesabı Sil',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ]
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
+ 

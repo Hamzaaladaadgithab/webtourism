@@ -60,8 +60,12 @@ class AuthService {
   // Kullanıcı rolünü kontrol et
   Future<bool> isAdmin(String userId) async {
     try {
-      final doc = await _firestore.collection('users').doc(userId).get();
-      return doc.exists && doc.data()?['role'] == 'admin';
+      // Önce admins koleksiyonunda kontrol et
+      final adminDoc = await _firestore.collection('admins').doc(userId).get();
+      if (adminDoc.exists) {
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Admin kontrolü sırasında hata: $e');
       return false;
@@ -92,6 +96,40 @@ class AuthService {
 
       // Yeni şifreyi güncelle
       await user.updatePassword(newPassword);
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
+  // Kullanıcının kimliğini yeniden doğrula
+  Future<void> reauthenticateWithPassword(String password) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('Kullanıcı oturumu bulunamadı');
+      }
+
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
+  // Kullanıcı hesabını sil
+  Future<void> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Kullanıcı oturumu bulunamadı');
+
+      // Firestore'dan kullanıcı verilerini sil
+      await _firestore.collection('users').doc(user.uid).delete();
+
+      // Firebase Auth'dan kullanıcıyı sil
+      await user.delete();
     } catch (e) {
       throw _handleAuthError(e);
     }

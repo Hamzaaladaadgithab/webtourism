@@ -9,6 +9,19 @@ class AdminService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Admin yetkisini kontrol et
+  Future<void> _verifyAdminAccess() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Oturum açık değil');
+    }
+
+    final adminDoc = await _firestore.collection('admins').doc(user.uid).get();
+    if (!adminDoc.exists) {
+      throw Exception('Admin yetkisi bulunamadı');
+    }
+  }
+
   // Admin girişi
   Future<AdminUser?> signInAdmin(String email, String password) async {
     try {
@@ -53,6 +66,7 @@ class AdminService {
 
   // Tur silme
   Future<void> deleteTour(String tourId) async {
+    await _verifyAdminAccess();
     try {
       final batch = _firestore.batch();
 
@@ -75,8 +89,6 @@ class AdminService {
       throw Exception('Tur silinemedi: ${e.toString()}');
     }
   }
-
-
 
   // İlk admin kullanıcısını oluştur
   Future<void> createInitialAdmin() async {
@@ -312,6 +324,7 @@ class AdminService {
 
   // Tur sil
   Future<void> deleteTrip(String tripId) async {
+    await _verifyAdminAccess();
     if (!await isCurrentUserAdmin()) {
       throw Exception('Bu işlem için admin yetkisi gerekiyor');
     }
@@ -330,6 +343,7 @@ class AdminService {
 
   // Rezervasyon durumunu güncelle
   Future<void> updateReservationStatus(String reservationId, String status) async {
+    await _verifyAdminAccess();
     if (!await isCurrentUserAdmin()) {
       throw Exception('Bu işlem için admin yetkisi gerekiyor');
     }
@@ -352,6 +366,7 @@ class AdminService {
 
   // Kullanıcı sil
   Future<void> deleteUser(String userId) async {
+    await _verifyAdminAccess();
     if (!await isCurrentUserAdmin()) {
       throw Exception('Bu işlem için admin yetkisi gerekiyor');
     }
@@ -375,6 +390,7 @@ class AdminService {
 
   // İstatistikleri güncelle
   Future<void> updateStatistics() async {
+    await _verifyAdminAccess();
     if (!await isCurrentUserAdmin()) {
       throw Exception('Bu işlem için admin yetkisi gerekiyor');
     }
@@ -402,6 +418,7 @@ class AdminService {
 
   // Yeni tur ekle
   Future<void> addTrip(Trip trip) async {
+    await _verifyAdminAccess();
     if (!await isCurrentUserAdmin()) {
       throw Exception('Bu işlem için admin yetkisi gerekiyor');
     }

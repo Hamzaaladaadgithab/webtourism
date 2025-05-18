@@ -20,11 +20,16 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
   DateTime? _endDate;
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    final now = DateTime.now();
+    final initialDate = isStartDate ? _startDate ?? now : _endDate ?? now;
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime(now.year + 2, 12, 31);
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2025),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -144,8 +149,15 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
           reason: reason,
         );
 
+        // Stream'i yenilemek için setState kullanmaya gerek yok
+        // StreamBuilder otomatik olarak yeni verileri alacak
+
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rezervasyon durumu güncellendi')),
+          const SnackBar(
+            content: Text('Rezervasyon durumu güncellendi'),
+            backgroundColor: Colors.green,
+          ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

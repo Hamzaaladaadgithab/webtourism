@@ -8,6 +8,8 @@ class AppUser {
   final String phone;
   final DateTime createdAt;
   final List<String> favorites;
+  final String? profileImage;
+  final bool notificationsEnabled;
 
   AppUser({
     required this.id,
@@ -17,6 +19,8 @@ class AppUser {
     required this.phone,
     required this.createdAt,
     this.favorites = const [],
+    this.profileImage,
+    this.notificationsEnabled = true,
   });
 
   factory AppUser.fromFirestore(Map<String, dynamic> data, String id) {
@@ -30,6 +34,8 @@ class AppUser {
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       favorites: List<String>.from(data['favorites'] ?? []),
+      profileImage: data['profileImage'],
+      notificationsEnabled: data['notificationsEnabled'] ?? true,
     );
   }
 
@@ -41,6 +47,8 @@ class AppUser {
       'phone': phone,
       'createdAt': createdAt,
       'favorites': favorites,
+      'profileImage': profileImage,
+      'notificationsEnabled': notificationsEnabled,
     };
   }
 
@@ -49,6 +57,8 @@ class AppUser {
     String? name,
     String? role,
     String? phone,
+    String? profileImage,
+    bool? notificationsEnabled,
     List<String>? favorites,
   }) {
     return AppUser(

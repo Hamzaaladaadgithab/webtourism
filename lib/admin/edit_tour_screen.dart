@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/trip.dart';
 import '../services/admin_service.dart';
-import '../utils/responsive_helper.dart';
+import '../models/trip.dart';
+import '../models/admin_user.dart';
 
 class EditTourScreen extends StatefulWidget {
   final Trip trip;
@@ -13,8 +13,8 @@ class EditTourScreen extends StatefulWidget {
 }
 
 class _EditTourScreenState extends State<EditTourScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _adminService = AdminService();
+  final AdminService _adminService = AdminService();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
   late TextEditingController _titleController;
@@ -63,20 +63,20 @@ class _EditTourScreenState extends State<EditTourScreen> {
         description: _descriptionController.text,
         location: _locationController.text,
         price: double.parse(_priceController.text),
-
-        categories: _selectedCategories,
         imageUrl: _imageUrlController.text,
+        categories: _selectedCategories,
         startDate: _startDate!,
         endDate: _endDate!,
         status: widget.trip.status,
       );
 
       await _adminService.updateTrip(updatedTrip);
+
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tur başarıyla güncellendi'),
+          content: Text('Gezi başarıyla güncellendi'),
           backgroundColor: Colors.green,
         ),
       );
@@ -89,68 +89,104 @@ class _EditTourScreenState extends State<EditTourScreen> {
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _selectStartDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() => _startDate = picked);
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    if (_startDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen önce başlangıç tarihini seçin'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate!.add(const Duration(days: 1)),
+      firstDate: _startDate!,
+      lastDate: _startDate!.add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() => _endDate = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Gezi Düzenle',
-          style: TextStyle(
-            fontSize: ResponsiveHelper.getFontSize(context, 20),
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    return FutureBuilder<AdminUser?>(
+      future: _adminService.getCurrentAdmin(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Bu sayfaya erişim için admin yetkisi gereklidir.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          });
+          return const SizedBox.shrink();
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              'Gezi Düzenle',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
-        ),
-        backgroundColor: Colors.blue.shade900,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: ResponsiveHelper.getPadding(context),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
                     TextFormField(
                       controller: _titleController,
                       decoration: const InputDecoration(
-                        labelText: 'Tur Adı',
+                        labelText: 'Başlık',
                         border: OutlineInputBorder(),
                       ),
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen tur adını girin';
-                        }
-                        return null;
-                      },
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Lütfen bir başlık girin' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descriptionController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Açıklama',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveHelper.getFontSize(context, 16),
-                          vertical: ResponsiveHelper.getFontSize(context, 12),
-                        ),
-                        border: const OutlineInputBorder(),
+                        border: OutlineInputBorder(),
                       ),
                       maxLines: 3,
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen açıklama girin';
-                        }
-                        return null;
-                      },
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Lütfen bir açıklama girin' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -159,32 +195,32 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         labelText: 'Konum',
                         border: OutlineInputBorder(),
                       ),
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen konum girin';
-                        }
-                        return null;
-                      },
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Lütfen bir konum girin' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _priceController,
                       decoration: const InputDecoration(
-                        labelText: 'Fiyat (TL)',
+                        labelText: 'Fiyat',
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen fiyat girin';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Geçerli bir sayı girin';
-                        }
+                        if (value == null || value.isEmpty) return 'Lütfen bir fiyat girin';
+                        if (double.tryParse(value) == null) return 'Geçerli bir sayı girin';
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _imageUrlController,
+                      decoration: const InputDecoration(
+                        labelText: 'Resim URL',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Lütfen resim URL\'si girin' : null,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -192,128 +228,58 @@ class _EditTourScreenState extends State<EditTourScreen> {
                         Expanded(
                           child: ListTile(
                             title: const Text('Başlangıç Tarihi'),
-                            subtitle: Text(_startDate == null
-                                ? 'Seçilmedi'
-                                : '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'),
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _startDate ?? DateTime.now(),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime(2025),
-                              );
-                              if (picked != null) {
-                                setState(() => _startDate = picked);
-                              }
-                            },
+                            subtitle: Text(
+                              _startDate != null
+                                  ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                                  : 'Seçilmedi',
+                            ),
+                            onTap: _selectStartDate,
                           ),
                         ),
                         Expanded(
                           child: ListTile(
                             title: const Text('Bitiş Tarihi'),
-                            subtitle: Text(_endDate == null
-                                ? 'Seçilmedi'
-                                : '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'),
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _endDate ?? (_startDate?.add(const Duration(days: 1)) ?? DateTime.now()),
-                                firstDate: _startDate ?? DateTime.now(),
-                                lastDate: DateTime(2025),
-                              );
-                              if (picked != null) {
-                                setState(() => _endDate = picked);
-                              }
-                            },
+                            subtitle: Text(
+                              _endDate != null
+                                  ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                                  : 'Seçilmedi',
+                            ),
+                            onTap: _selectEndDate,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _imageUrlController,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _updateTour(),
-                      decoration: const InputDecoration(
-                        labelText: 'Resim URL',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Kategoriler',
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getFontSize(context, 16),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: [
-                        FilterChip(
-                          label: const Text('Doğa'),
-                          selected: _selectedCategories.contains('nature'),
-                          onSelected: (selected) {
+                      children: ['Plaj', 'Tarih', 'Kültür', 'Macera', 'Doğa'].map((category) {
+                        return FilterChip(
+                          label: Text(category),
+                          selected: _selectedCategories.contains(category),
+                          onSelected: (bool selected) {
                             setState(() {
                               if (selected) {
-                                _selectedCategories.add('nature');
+                                _selectedCategories.add(category);
                               } else {
-                                _selectedCategories.remove('nature');
+                                _selectedCategories.remove(category);
                               }
                             });
                           },
-                        ),
-                        FilterChip(
-                          label: const Text('Tarih'),
-                          selected: _selectedCategories.contains('history'),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedCategories.add('history');
-                              } else {
-                                _selectedCategories.remove('history');
-                              }
-                            });
-                          },
-                        ),
-                        FilterChip(
-                          label: const Text('Kültür'),
-                          selected: _selectedCategories.contains('culture'),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedCategories.add('culture');
-                              } else {
-                                _selectedCategories.remove('culture');
-                              }
-                            });
-                          },
-                        ),
-                        FilterChip(
-                          label: const Text('Macera'),
-                          selected: _selectedCategories.contains('adventure'),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedCategories.add('adventure');
-                              } else {
-                                _selectedCategories.remove('adventure');
-                              }
-                            });
-                          },
-                        ),
-                      ],
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: _updateTour,
                       child: const Text('Güncelle'),
                     ),
                   ],
-                ),
+                ],
               ),
             ),
+          ),
+        );
+      },
     );
   }
 }
