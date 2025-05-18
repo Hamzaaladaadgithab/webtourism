@@ -11,10 +11,31 @@ class FavoritesScreen extends StatefulWidget {
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
-class _FavoritesScreenState extends State<FavoritesScreen> {
+class _FavoritesScreenState extends State<FavoritesScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final FavoriteService _favoriteService = FavoriteService();
 
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFavorites();
+  }
+
+  Future<void> _initializeFavorites() async {
+    try {
+      await _favoriteService.initializeFavorites();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Favoriler yüklenirken hata: $e')),
+        );
+      }
+    }
+  }
 
   Future<void> _removeFromFavorites(String tripId) async {
     setState(() => _isLoading = true);
@@ -212,6 +233,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

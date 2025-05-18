@@ -13,43 +13,33 @@ class SearchService {
   }) async {
     try {
       // Ana sorgu
-      Query query = _firestore.collection('trips');
+      Query<Map<String, dynamic>> query = _firestore.collection('trips');
 
-      // 1. Metin araması
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        final searchLower = searchQuery.toLowerCase();
-        // Başlık veya konum içinde arama yap
-        query = query.where('searchFields', arrayContainsAny: [
-          'title_$searchLower',
-          'location_$searchLower',
-        ]);
-      }
+      // Önce sadece aktif turları filtrele
+      query = query.where('status', isEqualTo: TripStatus.AVAILABLE.toString());
 
-      // 2. Kategori filtresi
+      // Kategori filtresi
       if (category != null && category.isNotEmpty) {
         query = query.where('categories', arrayContains: category);
       }
 
-      // 3. Fiyat filtresi
+      // Fiyat filtresi ve sıralama
+      query = query.orderBy('price');
       if (maxPrice != null) {
         query = query.where('price', isLessThanOrEqualTo: maxPrice);
-      }
-
-      // 4. Tarih filtresi
-      if (selectedDate != null) {
-        // Seçilen tarihte başlayan turları getir
-        query = query.where('startDate', 
-          isGreaterThanOrEqualTo: Timestamp.fromDate(selectedDate));
       }
 
       // Sorguyu çalıştır
       final querySnapshot = await query.get();
       
-      // Sonuçları Trip modellerine dönüştür
-      return querySnapshot.docs.map((doc) {
-        final tripData = doc.data() as Map<String, dynamic>;
-        return Trip.fromFirestore(doc.id, tripData);
-      }).toList();
+      // Sonuçları filtrele ve dönüştür
+      return querySnapshot.docs
+          .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
+          .where((trip) => selectedDate == null || 
+              trip.startDate.isAfter(selectedDate) || 
+              trip.startDate.isAtSameMomentAs(selectedDate))
+          .toList();
+
     } catch (e) {
       print('Tur arama hatası: $e');
       return [];
@@ -61,16 +51,17 @@ class SearchService {
     try {
       final querySnapshot = await _firestore
           .collection('trips')
+          .where('status', isEqualTo: TripStatus.AVAILABLE.toString())
           .orderBy('rating', descending: true)
           .limit(10)
           .get();
 
-      return querySnapshot.docs.map((doc) =>
-        Trip.fromFirestore(doc.id, doc.data())
-      ).toList();
+      return querySnapshot.docs
+          .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
+          .toList();
     } catch (e) {
       print('Popüler geziler getirilirken hata: $e');
-      throw Exception('Popüler geziler yüklenirken bir hata oluştu');
+      return [];
     }
   }
 
@@ -92,7 +83,7 @@ class SearchService {
           final data = tripDoc.data()!;
           if (data.containsKey('categories')) {
             final categoriesData = data['categories'] as List<dynamic>?;
-          final categories = categoriesData?.map((e) => e.toString()).toList() ?? <String>[];
+            final categories = categoriesData?.map((e) => e.toString()).toList() ?? <String>[];
             preferredCategories.addAll(categories);
           }
         }

@@ -25,6 +25,7 @@ class TabsScreen extends StatefulWidget {
 }
 
 class _TabsScreenState extends State<TabsScreen> {
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DataService _dataService = DataService();
   int _selectedScreenIndex = 0;
@@ -157,7 +158,7 @@ class _TabsScreenState extends State<TabsScreen> {
         'icon': Icons.calendar_today,
       },
       {
-        'Screen': const ProfileScreen(),
+        'Screen': ProfileScreen(),
         'Title': 'Profilim',
         'icon': Icons.person,
       },
@@ -186,19 +187,13 @@ class _TabsScreenState extends State<TabsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: Colors.blue.shade900,
-        elevation: 0,
-        title: Text(
-          _screens[_selectedScreenIndex]['Title'],
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text(_screens[_selectedScreenIndex]['Title']),
+        automaticallyImplyLeading: false,
         centerTitle: true,
+        elevation: 0,
         actions: [
+
           if (_selectedScreenIndex == 1) // Ara ekranında ise
             IconButton(
               icon: const Icon(Icons.filter_list, color: Colors.white),

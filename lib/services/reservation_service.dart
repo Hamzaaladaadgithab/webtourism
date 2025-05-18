@@ -59,7 +59,7 @@ class ReservationService {
         .collection('reservations')
         .doc(reservationId)
         .update({
-          'status': ReservationStatus.cancelled.toString(),
+          'status': ReservationStatus.cancelled.value,
           'cancelledAt': FieldValue.serverTimestamp(),
         });
 
@@ -78,27 +78,71 @@ class ReservationService {
     required String admin,
     String? reason,
   }) async {
-    final docRef = _firestore.collection('reservations').doc(reservationId);
-    final doc = await docRef.get();
+    try {
+      final docRef = _firestore.collection('reservations').doc(reservationId);
+      final doc = await docRef.get();
 
-    if (!doc.exists) {
-      throw Exception('Rezervasyon bulunamadı');
+      if (!doc.exists) {
+        throw Exception('Rezervasyon bulunamadı');
+      }
+
+      final data = {
+        'status': newStatus.value,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'lastUpdatedBy': admin,
+      };
+
+      if (newStatus == ReservationStatus.cancelled) {
+        data['cancellationReason'] = reason ?? 'Belirtilmedi';
+        data['cancelledAt'] = FieldValue.serverTimestamp();
+        data['cancelledBy'] = admin;
+      } else if (newStatus == ReservationStatus.confirmed) {
+        data['confirmedAt'] = FieldValue.serverTimestamp();
+        data['confirmedBy'] = admin;
+      } else if (newStatus == ReservationStatus.completed) {
+        data['completedAt'] = FieldValue.serverTimestamp();
+        data['completedBy'] = admin;
+      }
+
+      // Batch işlemi başlat
+      final batch = _firestore.batch();
+
+      // Rezervasyon güncelleme
+      batch.update(docRef, data);
+      
+      // Bildirim oluştur
+      final notification = {
+        'userId': doc.data()?['userId'],
+        'type': 'reservation_status_update',
+        'status': newStatus.value,
+        'tripTitle': doc.data()?['tripTitle'],
+        'createdAt': FieldValue.serverTimestamp(),
+        'message': _getStatusUpdateMessage(newStatus, doc.data()?['tripTitle']),
+        'read': false
+      };
+      
+      final notificationRef = _firestore.collection('notifications').doc();
+      batch.set(notificationRef, notification);
+      
+      // İşlemleri commit et
+      await batch.commit();
+    } catch (e) {
+      print('Rezervasyon durumu güncellenirken hata: $e');
+      throw Exception('Rezervasyon durumu güncellenirken hata oluştu: $e');
     }
+  }
 
-    final data = {
-      'status': newStatus.toString().split('.').last,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    if (newStatus == ReservationStatus.cancelled && reason != null) {
-      data['cancelReason'] = reason;
-      data['cancelledAt'] = FieldValue.serverTimestamp();
-    } else if (newStatus == ReservationStatus.confirmed) {
-      data['confirmedAt'] = FieldValue.serverTimestamp();
-      data['confirmedBy'] = admin;
+  String _getStatusUpdateMessage(ReservationStatus status, String? tripTitle) {
+    switch (status) {
+      case ReservationStatus.confirmed:
+        return '$tripTitle rezervasyonunuz onaylandı!';
+      case ReservationStatus.cancelled:
+        return '$tripTitle rezervasyonunuz iptal edildi.';
+      case ReservationStatus.completed:
+        return '$tripTitle rezervasyonunuz tamamlandı.';
+      case ReservationStatus.pending:
+        return '$tripTitle rezervasyonunuz beklemeye alındı.';
     }
-
-    await docRef.update(data);
   }
 
   // Rezervasyon sil
@@ -147,31 +191,21 @@ class ReservationService {
   }
 
   // Tüm rezervasyonları getir (admin için)
-  Stream<List<Reservation>> getAllReservations({
-    ReservationStatus? status,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) {
-    Query query = _firestore.collection('reservations');
-
-    if (status != null) {
-      query = query.where('status', isEqualTo: status.toString().split('.').last);
-    }
-
-    if (startDate != null) {
-      query = query.where('startDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
-    }
-
-    if (endDate != null) {
-      query = query.where('endDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
-    }
-
-    return query
+  Stream<List<Reservation>> getAllReservations() {
+    return _firestore
+        .collection('reservations')
+        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Reservation.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+        .map((snapshot) {
+          try {
+            return snapshot.docs
+                .map((doc) => Reservation.fromFirestore(doc.id, doc.data()))
+                .toList();
+          } catch (e) {
+            print('Rezervasyon dönüşüm hatası: $e');
+            return <Reservation>[];
+          }
+        });
   }
 
   // Belirli bir tarih aralığında rezervasyon kontrolü
@@ -183,19 +217,19 @@ class ReservationService {
     final querySnapshot = await _firestore
         .collection('reservations')
         .where('tripId', isEqualTo: tripId)
-        .where('status', isEqualTo: ReservationStatus.confirmed.toString().split('.').last)
+        .where('status', isEqualTo: ReservationStatus.confirmed.value)
         .get();
 
     for (var doc in querySnapshot.docs) {
       final reservation = Reservation.fromFirestore(doc.id, doc.data());
       
       // Tarih çakışması kontrolü
-      if (!(endDate.isBefore(reservation.startDate) || 
-            startDate.isAfter(reservation.endDate))) {
-        return false;
+      if (startDate.isBefore(reservation.endDate) &&
+          endDate.isAfter(reservation.startDate)) {
+        return false; // Tarih aralığı müsait değil
       }
     }
 
-    return true;
+    return true; // Tarih aralığı müsait
   }
 }

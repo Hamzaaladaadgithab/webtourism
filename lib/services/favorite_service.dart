@@ -39,6 +39,28 @@ class FavoriteService {
   }
 
   // Favori turları getir
+  Future<void> initializeFavorites() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Kullanıcı girişi yapılmamış');
+    }
+
+    // Favori koleksiyonunu başlat
+    final favoritesRef = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites');
+
+    // Koleksiyonun varlığını kontrol et
+    final snapshot = await favoritesRef.limit(1).get();
+    if (!snapshot.docs.isNotEmpty) {
+      // Koleksiyon boşsa, varsayılan bir döküman oluştur ve hemen sil
+      // Bu, koleksiyonun stream'ini başlatır
+      final tempDoc = await favoritesRef.add({'temp': true});
+      await tempDoc.delete();
+    }
+  }
+
   Stream<List<Trip>> getFavoriteTrips() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -52,16 +74,39 @@ class FavoriteService {
         .snapshots()
         .asyncMap((snapshot) async {
       final tripIds = snapshot.docs.map((doc) => doc.id).toList();
-      if (tripIds.isEmpty) return [];
+      if (tripIds.isEmpty) {
+        print('Favori turlar boş');
+        return [];
+      }
 
-      final tripsSnapshot = await _firestore
-          .collection('trips')
-          .where(FieldPath.documentId, whereIn: tripIds)
-          .get();
+      // Turları getir ve önbelleğe al
+      try {
+        final tripsQuery = _firestore.collection('trips');
+        List<Trip> trips = [];
 
-      return tripsSnapshot.docs
-          .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
-          .toList();
+        // Firebase whereIn sınırlaması nedeniyle grupla
+        for (var i = 0; i < tripIds.length; i += 10) {
+          final end = (i + 10 < tripIds.length) ? i + 10 : tripIds.length;
+          final batchIds = tripIds.sublist(i, end);
+
+          final batchSnapshot = await tripsQuery
+              .where(FieldPath.documentId, whereIn: batchIds)
+              .get();
+
+          trips.addAll(
+            batchSnapshot.docs
+                .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
+                .toList(),
+          );
+        }
+
+        trips.sort((a, b) => b.startDate.compareTo(a.startDate));
+        print('Favori turlar getirildi: ${trips.length}');
+        return trips;
+      } catch (e) {
+        print('Favori turlar getirilirken hata: $e');
+        return [];
+      }
     });
   }
 

@@ -149,6 +149,35 @@ class ReservationCard extends StatelessWidget {
               ],
             ),
 
+            // İptal Nedeni (eğer varsa)
+            if (reservation.status == ReservationStatus.cancelled && 
+                reservation.cancellationReason != null) ...[  
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.red[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'İptal Nedeni: ${reservation.cancellationReason}',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // İptal Butonu
             if (reservation.status == ReservationStatus.pending) ...[
               const SizedBox(height: 16),

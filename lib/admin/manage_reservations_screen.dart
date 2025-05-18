@@ -18,6 +18,34 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
   ReservationStatus? _selectedStatus;
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _isLoading = false;
+  bool _isUpdating = false;
+
+  String _getStatusText(ReservationStatus status) {
+    switch (status) {
+      case ReservationStatus.pending:
+        return 'Onay Bekliyor';
+      case ReservationStatus.confirmed:
+        return 'Onaylandı';
+      case ReservationStatus.cancelled:
+        return 'İptal Edildi';
+      case ReservationStatus.completed:
+        return 'Tamamlandı';
+    }
+  }
+
+  Color _getStatusColor(ReservationStatus status) {
+    switch (status) {
+      case ReservationStatus.pending:
+        return Colors.orange;
+      case ReservationStatus.confirmed:
+        return Colors.green;
+      case ReservationStatus.cancelled:
+        return Colors.red;
+      case ReservationStatus.completed:
+        return Colors.blue;
+    }
+  }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final now = DateTime.now();
@@ -56,17 +84,22 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
   }
 
   Future<void> _showStatusUpdateDialog(Reservation reservation) async {
+    if (_isUpdating) return;
+    setState(() => _isUpdating = true);
+
+    
     final currentAdmin = await _adminService.getCurrentAdmin();
     if (currentAdmin == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Admin oturumu bulunamadı')),
       );
+      setState(() => _isUpdating = false);
       return;
     }
 
-    String? reason;
-    ReservationStatus? newStatus = await showDialog<ReservationStatus>(
-      context: context,
+      String? reason;
+      final ReservationStatus? selectedStatus = await showDialog<ReservationStatus>(
+        context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
           'Rezervasyon Durumunu Güncelle',
@@ -123,6 +156,7 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                             ),
                           ),
                           onPressed: () {
+                            setState(() => _isUpdating = true);
                             Navigator.of(ctx).pop();
                             Navigator.of(context).pop(value);
                           },
@@ -131,6 +165,7 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                     ),
                   );
                 } else {
+                  setState(() => _isUpdating = true);
                   Navigator.of(context).pop(value);
                 }
               },
@@ -140,11 +175,11 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
       ),
     );
 
-    if (newStatus != null && newStatus != reservation.status) {
+    if (selectedStatus != null && selectedStatus != reservation.status) {
       try {
         await _reservationService.updateReservationStatus(
           reservationId: reservation.id,
-          newStatus: newStatus,
+          newStatus: selectedStatus,
           admin: currentAdmin.id,
           reason: reason,
         );
@@ -157,9 +192,22 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
           const SnackBar(
             content: Text('Rezervasyon durumu güncellendi'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
+        
+        // Sayfayı yenile
+        setState(() {
+          _isLoading = false;
+          _isUpdating = false;
+        });
+        
+        // Kullanıcıya bildirim gönderildi
       } catch (e) {
+        setState(() {
+          _isLoading = false;
+          _isUpdating = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hata: ${e.toString()}')),
         );
@@ -167,29 +215,75 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
     }
   }
 
-  String _getStatusText(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return 'Onay Bekliyor';
-      case ReservationStatus.confirmed:
-        return 'Onaylandı';
-      case ReservationStatus.cancelled:
-        return 'İptal Edildi';
-      case ReservationStatus.completed:
-        return 'Tamamlandı';
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
   }
 
-  Color _getStatusColor(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return Colors.orange;
-      case ReservationStatus.confirmed:
-        return Colors.green;
-      case ReservationStatus.cancelled:
-        return Colors.red;
-      case ReservationStatus.completed:
-        return Colors.blue;
+  Future<void> _showDeleteConfirmationDialog(Reservation reservation) async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rezervasyonu Sil'),
+        content: Text('${reservation.tripTitle} rezervasyonunu silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('VAZGEÇ'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              setState(() => _isUpdating = true);
+              try {
+                await _reservationService.deleteReservation(reservation.id);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Rezervasyon başarıyla silindi'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Hata: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } finally {
+                if (mounted) setState(() => _isUpdating = false);
+              }
+            },
+            child: const Text(
+              'SİL',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final admin = await _adminService.getCurrentAdmin();
+      if (admin == null) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Admin yetkisi gerekli')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
     }
   }
 
@@ -208,10 +302,12 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
         backgroundColor: Colors.blue.shade900,
         centerTitle: true,
       ),
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          children: [
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
+              color: Colors.white,
+              child: Column(
+                children: [
             Card(
               margin: const EdgeInsets.all(16),
               elevation: 4,
@@ -293,17 +389,62 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
             ),
             Expanded(
               child: StreamBuilder<List<Reservation>>(
-                stream: _reservationService.getAllReservations(
-                  status: _selectedStatus,
-                  startDate: _startDate,
-                  endDate: _endDate,
-                ),
+                stream: _reservationService.getAllReservations(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Hata: ${snapshot.error}',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getFontSize(context, 14),
+                          color: Colors.red,
+                        ),
+                      ),
+                    );
+                  }
+
+                  var reservations = snapshot.data ?? [];
+
+                  // Durum filtreleme
+                  if (_selectedStatus != null) {
+                    reservations = reservations
+                        .where((r) => r.status == _selectedStatus)
+                        .toList();
+                  }
+
+                  // Tarih filtreleme
+                  if (_startDate != null) {
+                    reservations = reservations
+                        .where((r) => r.startDate.isAfter(_startDate!))
+                        .toList();
+                  }
+
+                  if (_endDate != null) {
+                    reservations = reservations
+                        .where((r) => r.endDate.isBefore(_endDate!))
+                        .toList();
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Hata: ${snapshot.error}',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getFontSize(context, 14),
+                          color: Colors.red,
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (reservations.isEmpty) {
                     return Center(
                       child: Text(
                         'Rezervasyon bulunamadı.',
@@ -317,9 +458,9 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
 
                   return ListView.builder(
                     padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
-                    itemCount: snapshot.data!.length,
+                    itemCount: reservations.length,
                     itemBuilder: (context, index) {
-                      final reservation = snapshot.data![index];
+                      final reservation = reservations[index];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 16),
                         elevation: 4,
@@ -360,10 +501,28 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                               ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showStatusUpdateDialog(reservation),
-                            color: Colors.blue.shade900,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isUpdating)
+                                const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              else ...[  
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => _showStatusUpdateDialog(reservation),
+                                  color: Colors.blue.shade900,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () => _showDeleteConfirmationDialog(reservation),
+                                  color: Colors.red,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       );

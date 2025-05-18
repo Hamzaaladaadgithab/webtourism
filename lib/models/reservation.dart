@@ -7,6 +7,36 @@ enum ReservationStatus {
   completed   // Tamamlandı
 }
 
+extension ReservationStatusExtension on ReservationStatus {
+  String get value {
+    switch (this) {
+      case ReservationStatus.pending:
+        return 'ReservationStatus.pending';
+      case ReservationStatus.confirmed:
+        return 'ReservationStatus.confirmed';
+      case ReservationStatus.cancelled:
+        return 'ReservationStatus.cancelled';
+      case ReservationStatus.completed:
+        return 'ReservationStatus.completed';
+    }
+  }
+
+  static ReservationStatus fromString(String status) {
+    switch (status) {
+      case 'ReservationStatus.pending':
+        return ReservationStatus.pending;
+      case 'ReservationStatus.confirmed':
+        return ReservationStatus.confirmed;
+      case 'ReservationStatus.cancelled':
+        return ReservationStatus.cancelled;
+      case 'ReservationStatus.completed':
+        return ReservationStatus.completed;
+      default:
+        return ReservationStatus.pending;
+    }
+  }
+}
+
 class Reservation {
   final String id;
   final String userId;
@@ -21,6 +51,7 @@ class Reservation {
   final double totalPrice;
   final ReservationStatus status;
   final DateTime createdAt;
+  final String? cancellationReason;
 
   Reservation({
     required this.id,
@@ -36,6 +67,7 @@ class Reservation {
     required this.totalPrice,
     required this.status,
     required this.createdAt,
+    this.cancellationReason,
   });
 
   factory Reservation.fromFirestore(String id, Map<String, dynamic> data) {
@@ -51,11 +83,9 @@ class Reservation {
       endDate: (data['endDate'] as Timestamp).toDate(),
       numberOfPeople: data['numberOfPeople'] ?? 0,
       totalPrice: (data['totalPrice'] ?? 0).toDouble(),
-      status: ReservationStatus.values.firstWhere(
-        (e) => e.toString() == data['status'],
-        orElse: () => ReservationStatus.pending,
-      ),
+      status: ReservationStatusExtension.fromString(data['status'] ?? 'ReservationStatus.pending'),
       createdAt: (data['createdAt'] as Timestamp).toDate(),
+      cancellationReason: data['cancellationReason'],
     );
   }
 
@@ -71,8 +101,9 @@ class Reservation {
       'endDate': Timestamp.fromDate(endDate),
       'numberOfPeople': numberOfPeople,
       'totalPrice': totalPrice,
-      'status': status.toString(),
+      'status': status.value,
       'createdAt': Timestamp.fromDate(createdAt),
+      if (cancellationReason != null) 'cancellationReason': cancellationReason,
     };
   }
 
@@ -90,6 +121,7 @@ class Reservation {
     double? totalPrice,
     ReservationStatus? status,
     DateTime? createdAt,
+    String? cancellationReason,
   }) {
     return Reservation(
       id: id ?? this.id,
@@ -105,6 +137,7 @@ class Reservation {
       totalPrice: totalPrice ?? this.totalPrice,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
+      cancellationReason: cancellationReason ?? this.cancellationReason,
     );
   }
 }

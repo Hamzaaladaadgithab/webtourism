@@ -26,6 +26,8 @@ class Trip {
   final int duration;
   final int capacity;
   final String? season;
+  final String? cancelReason;
+  final List<String>? searchFields;
 
   Trip({
     required this.id,
@@ -42,6 +44,8 @@ class Trip {
     this.duration = 1,
     this.capacity = 10,
     this.season,
+    this.cancelReason,
+    this.searchFields,
   }) : createdAt = createdAt ?? DateTime.now();
 
   static DateTime? _parseTimestamp(dynamic value, {bool addOneDay = false}) {
@@ -82,6 +86,8 @@ class Trip {
       duration: json['duration'] as int? ?? 1,
       capacity: json['capacity'] as int? ?? 10,
       season: json['season'] as String?,
+      cancelReason: json['cancelReason'] as String?,
+      searchFields: json['searchFields'] != null ? List<String>.from(json['searchFields']) : null,
     );
   }
 
@@ -101,7 +107,36 @@ class Trip {
       'duration': duration,
       'capacity': capacity,
       'season': season,
+      'cancelReason': cancelReason,
+      'searchFields': searchFields ?? _generateSearchFields(),
     };
+  }
+
+  List<String> _generateSearchFields() {
+    final fields = <String>[];
+    final titleLower = title.toLowerCase();
+    final locationLower = location.toLowerCase();
+    
+    // Add title and location search fields
+    fields.add('title_$titleLower');
+    fields.add('location_$locationLower');
+    
+    // Add individual words from title
+    titleLower.split(' ').where((word) => word.isNotEmpty).forEach((word) {
+      fields.add('title_$word');
+    });
+    
+    // Add individual words from location
+    locationLower.split(' ').where((word) => word.isNotEmpty).forEach((word) {
+      fields.add('location_$word');
+    });
+    
+    // Add categories as search fields
+    categories.forEach((category) {
+      fields.add('category_${category.toLowerCase()}');
+    });
+    
+    return fields;
   }
 
   Trip copyWith({

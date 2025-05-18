@@ -428,13 +428,13 @@ class AdminService {
 
   // Tur güncelle
   Future<void> updateTrip(Trip trip) async {
-    if (!await isCurrentUserAdmin()) {
-      throw Exception('Bu işlem için admin yetkisi gerekiyor');
-    }
-
+    await _verifyAdminAccess();
     await _firestore
         .collection('trips')
         .doc(trip.id)
         .update(trip.toFirestore());
+    
+    // Trigger immediate update
+    _firestore.collection('trips').doc(trip.id).get();
   }
 }

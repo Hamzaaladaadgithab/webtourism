@@ -73,7 +73,6 @@ class _EditTourScreenState extends State<EditTourScreen> {
       await _adminService.updateTrip(updatedTrip);
 
       if (!mounted) return;
-      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Gezi başarıyla güncellendi'),
@@ -129,9 +128,15 @@ class _EditTourScreenState extends State<EditTourScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<AdminUser?>(
-      future: _adminService.getCurrentAdmin(),
-      builder: (context, snapshot) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Turu Düzenle'),
+        backgroundColor: Colors.blue[900],
+        automaticallyImplyLeading: false,
+      ),
+      body: FutureBuilder<AdminUser?>(
+        future: _adminService.getCurrentAdmin(),
+        builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -269,9 +274,19 @@ class _EditTourScreenState extends State<EditTourScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _updateTour,
-                      child: const Text('Güncelle'),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[900],
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: _isLoading ? null : _updateTour,
+                        child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Güncelle', style: TextStyle(fontSize: 16)),
+                      ),
                     ),
                   ],
                 ],
@@ -280,6 +295,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
           ),
         );
       },
+    ),
     );
   }
 }

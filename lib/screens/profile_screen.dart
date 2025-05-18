@@ -6,13 +6,36 @@ import '../services/user_service.dart';
 import '../services/storage_service.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  void startEditing() {
+    final state = _key.currentState;
+    if (state != null) {
+      state._startEditing();
+    }
+  }
+
+  void cancelEditing() {
+    final state = _key.currentState;
+    if (state != null) {
+      state._cancelEditing();
+    }
+  }
+
+  final GlobalKey<_ProfileScreenState> _key = GlobalKey<_ProfileScreenState>();
+
+  ProfileScreen({Key? key}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
+
+  @override
+  Key get key => _key;
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  void _startEditing() {
+    setState(() => _isEditing = true);
+  }
+
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   final StorageService _storageService = StorageService();
@@ -33,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
 
   @override
   void initState() {
@@ -95,45 +119,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       if (_user == null) throw Exception('Kullanıcı bilgisi bulunamadı');
 
+      // Önce kullanıcı bilgilerini güncelle
       await _userService.updateUser(_user!.id, {
         'name': _nameController.text,
         'phone': _phoneController.text,
         'notificationsEnabled': _notificationsEnabled,
       });
 
-      if (_currentPasswordController.text.isNotEmpty &&
+      // Eğer şifre değişikliği varsa
+      if (_currentPasswordController.text.isNotEmpty && 
           _newPasswordController.text.isNotEmpty) {
         await _authService.updatePassword(
           _currentPasswordController.text,
-          _newPasswordController.text,
+          _newPasswordController.text
         );
       }
 
-      setState(() {
-        _isEditing = false;
-        _currentPasswordController.clear();
-        _newPasswordController.clear();
-        _confirmPasswordController.clear();
-      });
+      // Trigger immediate update
+      await _loadUserData();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profil başarıyla güncellendi'),
+          content: Text('Profil güncellendi'),
           backgroundColor: Colors.green,
         ),
       );
-
-      await _loadUserData();
     } catch (e) {
-      setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Hata: ${e.toString()}'),
+          content: Text('Hata: $e'),
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -235,21 +256,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil'),
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.cancel),
-              onPressed: _cancelEditing,
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => setState(() => _isEditing = true),
-            ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -291,6 +297,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                if (!_isEditing)
+                  ElevatedButton(
+                    onPressed: _startEditing,
+                    child: const Text('Profili Düzenle'),
+                  ),
                 TextFormField(
                   controller: _nameController,
                   enabled: _isEditing,
@@ -345,15 +356,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _updateProfile,
-                    child: const Text('Kaydet'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _updateProfile,
+                        child: const Text('Kaydet'),
+                      ),
+                      OutlinedButton(
+                        onPressed: _cancelEditing,
+                        child: const Text('İptal'),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: _deleteAccount,
-                    child: const Text(
-                      'Hesabı Sil',
-                      style: TextStyle(color: Colors.red),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: TextButton(
+                      onPressed: _deleteAccount,
+                      child: const Text(
+                        'Hesabı Sil',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ),
                 ]

@@ -34,11 +34,10 @@ class TripCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          child: Flex(
-            direction: Axis.vertical,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
           children: [
             // Resim
             Stack(
@@ -84,24 +83,67 @@ class TripCard extends StatelessWidget {
             ),
 
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Başlık
-                  Text(
-                    trip.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
+                  // Başlık ve Durum
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          trip.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                      if (trip.status != TripStatus.AVAILABLE)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: trip.status == TripStatus.CANCELLED ? Colors.red : Colors.orange,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            trip.status == TripStatus.CANCELLED ? 'İptal Edildi' : 'Dolu',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+
+                  // İptal Nedeni
+                  if (trip.status == TripStatus.CANCELLED && trip.cancelReason != null)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        'İptal Nedeni: ${trip.cancelReason}',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+
                   const SizedBox(height: 8),
 
                   // Açıklama
                   Container(
-                    constraints: BoxConstraints(minHeight: 40),
+                    constraints: const BoxConstraints(maxHeight: 50),
                     child: Text(
                       trip.description,
                       maxLines: 2,
@@ -113,7 +155,7 @@ class TripCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
 
                   // Detaylar
                   Row(
@@ -142,7 +184,7 @@ class TripCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Row(
                               children: [
                                 const Icon(

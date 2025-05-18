@@ -21,12 +21,10 @@ class _SearchScreenState extends State<SearchScreen> {
   final AuthService _authService = AuthService();
   final TextEditingController _searchController = TextEditingController();
   final List<String> _categories = [
-    'Kültür Turu',
-    'Doğa Turu',
-    'Yemek Turu',
-    'Şehir Turu',
-    'Gemi Turu',
-    'Kayak Turu',
+    'Doğa Turizmi',
+    'Kültür Turizmi',
+    'Macera Turizmi',
+    'Eğitim Turizmi',
   ];
 
   String _selectedCategory = '';
