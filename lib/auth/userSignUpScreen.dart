@@ -12,6 +12,7 @@ class UserSignUpScreen extends StatefulWidget {
 }
 
 class _UserSignUpScreenState extends State<UserSignUpScreen> {
+  bool _isPasswordVisible = false;
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -147,14 +148,25 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                           controller: _passwordController,
                           decoration: InputDecoration(
                             labelText: 'Şifre',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.lock),
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.lock),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: ResponsiveHelper.getFontSize(context, 16),
                               vertical: ResponsiveHelper.getFontSize(context, 12),
                             ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _submit(),
                           validator: (value) {

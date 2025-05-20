@@ -4,7 +4,7 @@ import '../models/trip.dart';
 class SearchService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Modern ve basit arama sistemi
+  // Gelişmiş arama sistemi
   Future<List<Trip>> searchTrips({
     String? searchQuery,
     String? category,
@@ -18,32 +18,103 @@ class SearchService {
       // Önce sadece aktif turları filtrele
       query = query.where('status', isEqualTo: TripStatus.AVAILABLE.toString());
 
-      // Kategori filtresi
-      if (category != null && category.isNotEmpty) {
-        query = query.where('categories', arrayContains: category);
-      }
-
-      // Fiyat filtresi ve sıralama
-      query = query.orderBy('price');
+      // Fiyat filtresi
       if (maxPrice != null) {
         query = query.where('price', isLessThanOrEqualTo: maxPrice);
       }
 
+      // Kategori filtresi - yeni kategori sistemine göre
+      if (category != null && category.isNotEmpty) {
+        query = query.where('categories', arrayContains: category);
+      }
+
       // Sorguyu çalıştır
-      final querySnapshot = await query.get();
+      final querySnapshot = await query.orderBy('price').get();
+
+      // Sonuçları al
+      var results = querySnapshot.docs.map((doc) => Trip.fromFirestore(doc.id, doc.data())).toList();
+
+      // Metin araması için manuel filtreleme
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        // Küçük harfe çevir ve Türkçe karakterleri normalize et
+        String normalizedQuery = searchQuery.toLowerCase()
+            .replaceAll('ı', 'i')
+            .replaceAll('ğ', 'g')
+            .replaceAll('ü', 'u')
+            .replaceAll('ş', 's')
+            .replaceAll('ö', 'o')
+            .replaceAll('ç', 'c');
+
+        // Manuel arama yap
+        results = results.where((trip) {
+          // Başlık ve açıklamada arama
+          String normalizedTitle = trip.title.toLowerCase()
+              .replaceAll('ı', 'i')
+              .replaceAll('ğ', 'g')
+              .replaceAll('ü', 'u')
+              .replaceAll('ş', 's')
+              .replaceAll('ö', 'o')
+              .replaceAll('ç', 'c');
+          
+          String normalizedDesc = trip.description.toLowerCase()
+              .replaceAll('ı', 'i')
+              .replaceAll('ğ', 'g')
+              .replaceAll('ü', 'u')
+              .replaceAll('ş', 's')
+              .replaceAll('ö', 'o')
+              .replaceAll('ç', 'c');
+
+          return normalizedTitle.contains(normalizedQuery) || 
+                 normalizedDesc.contains(normalizedQuery);
+        }).toList();
+      }
       
-      // Sonuçları filtrele ve dönüştür
-      return querySnapshot.docs
-          .map((doc) => Trip.fromFirestore(doc.id, doc.data()))
-          .where((trip) => selectedDate == null || 
-              trip.startDate.isAfter(selectedDate) || 
-              trip.startDate.isAtSameMomentAs(selectedDate))
-          .toList();
+      // Tarih filtresi uygula
+      if (selectedDate != null) {
+        results = results.where((trip) {
+          return trip.startDate.isAfter(selectedDate) || 
+                 trip.startDate.isAtSameMomentAs(selectedDate);
+        }).toList();
+      }
+
+      // Eğer metin araması varsa, alakalılık skoruna göre sırala
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        results.sort((a, b) {
+          int scoreA = _calculateRelevanceScore(a, searchQuery);
+          int scoreB = _calculateRelevanceScore(b, searchQuery);
+          return scoreB.compareTo(scoreA);
+        });
+      }
+
+      return results;
 
     } catch (e) {
       print('Tur arama hatası: $e');
       return [];
     }
+  }
+
+  // Alakalılık skorunu hesapla
+  int _calculateRelevanceScore(Trip trip, String query) {
+    int score = 0;
+    String normalizedQuery = query.toLowerCase();
+
+    // Başlıkta eşleşme
+    if (trip.title.toLowerCase().contains(normalizedQuery)) {
+      score += 3;
+    }
+
+    // Açıklamada eşleşme
+    if (trip.description.toLowerCase().contains(normalizedQuery)) {
+      score += 2;
+    }
+
+    // Lokasyonda eşleşme
+    if (trip.location.toLowerCase().contains(normalizedQuery)) {
+      score += 1;
+    }
+
+    return score;
   }
 
   // Popüler gezileri getir

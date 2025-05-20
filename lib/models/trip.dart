@@ -2,10 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Sabit kategori listesi
 final List<String> availableCategories = [
-  'Doğa Turizmi',
-  'Kültür Turizmi',
-  'Macera Turizmi',
-  'Eğitim Turizmi'
+  'Doğa & Ekoturizm',
+  'Kültür & Tarih',
+  'Deniz & Tatil',
+  'Macera & Spor',
+  'Yeme & İçme',
+  'Festival & Etkinlik',
+  'Alışveriş Turları',
+  'İnanç Turizmi',
+  'Sağlık & Termal Turizm',
+  'Eğitim & Dil Turları',
 ];
 enum TripStatus { AVAILABLE, FULL, CANCELLED }
 
@@ -114,29 +120,37 @@ class Trip {
 
   List<String> _generateSearchFields() {
     final fields = <String>[];
-    final titleLower = title.toLowerCase();
-    final locationLower = location.toLowerCase();
     
-    // Add title and location search fields
-    fields.add('title_$titleLower');
-    fields.add('location_$locationLower');
+    // Türkçe karakterleri normalize et
+    String normalizeText(String text) {
+      return text.toLowerCase()
+          .replaceAll('ı', 'i')
+          .replaceAll('ğ', 'g')
+          .replaceAll('ü', 'u')
+          .replaceAll('ş', 's')
+          .replaceAll('ö', 'o')
+          .replaceAll('ç', 'c');
+    }
     
-    // Add individual words from title
-    titleLower.split(' ').where((word) => word.isNotEmpty).forEach((word) {
-      fields.add('title_$word');
-    });
+    final titleNormalized = normalizeText(title);
+    final locationNormalized = normalizeText(location);
+    final descriptionNormalized = normalizeText(description);
     
-    // Add individual words from location
-    locationLower.split(' ').where((word) => word.isNotEmpty).forEach((word) {
-      fields.add('location_$word');
-    });
+    // Başlık, lokasyon ve açıklama alanlarını ekle
+    fields.addAll([titleNormalized, locationNormalized]);
     
-    // Add categories as search fields
+    // Kelimeleri ayır ve ekle
+    fields.addAll(titleNormalized.split(' ').where((word) => word.isNotEmpty));
+    fields.addAll(locationNormalized.split(' ').where((word) => word.isNotEmpty));
+    fields.addAll(descriptionNormalized.split(' ').where((word) => word.length > 2));
+    
+    // Kategorileri ekle
     categories.forEach((category) {
-      fields.add('category_${category.toLowerCase()}');
+      fields.add(normalizeText(category));
     });
     
-    return fields;
+    // Tekrar eden kelimeleri kaldır ve boş stringleri filtrele
+    return fields.where((field) => field.isNotEmpty).toSet().toList();
   }
 
   Trip copyWith({

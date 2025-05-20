@@ -20,14 +20,61 @@ class _SearchScreenState extends State<SearchScreen> {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
   final TextEditingController _searchController = TextEditingController();
-  final List<String> _categories = [
-    'Doğa Turizmi',
-    'Kültür Turizmi',
-    'Macera Turizmi',
-    'Eğitim Turizmi',
-  ];
+  // Her kategori için simge ve renk tanımları
+  final Map<String, Map<String, dynamic>> categoryDetails = {
+    'Doğa & Ekoturizm': {
+      'icon': '🏞️',
+      'color': Color(0xFF4CAF50),
+      'description': 'Dağ, yayla, yürüyüş, doğal parklar, kamp',
+    },
+    'Kültür & Tarih': {
+      'icon': '🏛️',
+      'color': Color(0xFF9C27B0),
+      'description': 'Müzeler, tarihi yapılar, şehir turları',
+    },
+    'Deniz & Tatil': {
+      'icon': '🏖️',
+      'color': Color(0xFF1976D2),
+      'description': 'Plajlar, yaz tatili, resortlar, yüzme',
+    },
+    'Macera & Spor': {
+      'icon': '🧗',
+      'color': Color(0xFFF57C00),
+      'description': 'Rafting, paraşüt, safari, bisiklet',
+    },
+    'Yeme & İçme': {
+      'icon': '🍽️',
+      'color': Color(0xFFE91E63),
+      'description': 'Gurme turları, yöresel yemek deneyimi',
+    },
+    'Festival & Etkinlik': {
+      'icon': '🎭',
+      'color': Color(0xFF673AB7),
+      'description': 'Konserler, yerel festivaller, gösteriler',
+    },
+    'Alışveriş Turları': {
+      'icon': '🛍️',
+      'color': Color(0xFF795548),
+      'description': 'Outlet merkezleri, pazarlar, hediyelik eşyalar',
+    },
+    'İnanç Turizmi': {
+      'icon': '🕌',
+      'color': Color(0xFF607D8B),
+      'description': 'Dini yapılar, hac turları, camiler',
+    },
+    'Sağlık & Termal Turizm': {
+      'icon': '🏥',
+      'color': Color(0xFF009688),
+      'description': 'Spa, kaplıca, sağlık merkezleri',
+    },
+    'Eğitim & Dil Turları': {
+      'icon': '🏫',
+      'color': Color(0xFFFF5722),
+      'description': 'Dil okulları, kültür değişim programları',
+    },
+  };
 
-  String _selectedCategory = '';
+  String? _selectedCategory;
   List<Trip> _searchResults = [];
   String? _error;
   double _maxPrice = kMaxPrice;
@@ -172,50 +219,60 @@ class _SearchScreenState extends State<SearchScreen> {
             onChanged: (value) => _performSearch(),
           ),
         ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
             children: [
               FilterChip(
-                selected: _selectedCategory.isEmpty,
+                selected: _selectedCategory == null,
+                label: const Text(
+                  'Tümü',
+                  style: TextStyle(fontSize: 12),
+                ),
                 onSelected: (selected) {
                   setState(() {
-                    _selectedCategory = '';
+                    _selectedCategory = null;
                   });
                   _performSearch();
                 },
-                label: Text(
-                'Tümü',
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getFontSize(context, 14)
-                ),
-              ),
                 backgroundColor: Colors.white,
-                selectedColor: const Color(0x332196F3),
+                selectedColor: Colors.blue.withOpacity(0.2),
                 checkmarkColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
               ),
-              SizedBox(width: ResponsiveHelper.getFontSize(context, 8)),
-              ..._categories.map((category) {
-                return Padding(
-                  padding: EdgeInsets.only(right: ResponsiveHelper.getFontSize(context, 8)),
-                  child: FilterChip(
-                    selected: _selectedCategory == category,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedCategory = selected ? category : '';
-                      });
-                      _performSearch();
-                    },
-                    label: Text(
-                      category,
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getFontSize(context, 14)
+              ...categoryDetails.entries.map((entry) {
+                final category = entry.key;
+                final details = entry.value;
+                final isSelected = _selectedCategory == category;
+                return FilterChip(
+                  selected: isSelected,
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        details['icon'] as String,
+                        style: const TextStyle(fontSize: 16),
                       ),
-                    ),
-                    backgroundColor: Colors.white,
-                    selectedColor: const Color(0x332196F3),
-                    checkmarkColor: Colors.blue,
+                      const SizedBox(width: 4),
+                      Text(
+                        category,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ),
+                  tooltip: details['description'] as String,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedCategory = selected ? category : null;
+                    });
+                    _performSearch();
+                  },
+                  backgroundColor: Colors.white,
+                  selectedColor: (details['color'] as Color).withOpacity(0.2),
+                  checkmarkColor: details['color'] as Color,
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 );
               }).toList(),
             ],

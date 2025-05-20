@@ -24,19 +24,59 @@ class _AddTourScreenState extends State<AddTourScreen> {
   bool _isLoading = false;
   List<String> _selectedCategories = [];
   
-  // Sabit kategori listesi
-  final List<String> _availableCategories = [
-    'Doğa & Ekoturizm',
-    'Kültür & Tarih',
-    'Deniz & Tatil',
-    'Macera & Spor',
-    'Yeme & İçme',
-    'Festival & Etkinlik',
-    'Alışveriş Turları',
-    'İnanç Turizmi',
-    'Sağlık & Termal Turizm',
-    'Eğitim & Dil Turları',
-  ];
+  // Her kategori için simge ve renk tanımları
+  final Map<String, Map<String, dynamic>> categoryDetails = {
+    'Doğa & Ekoturizm': {
+      'icon': '🏞️',
+      'color': Color(0xFF4CAF50),
+      'description': 'Dağ, yayla, yürüyüş, doğal parklar, kamp',
+    },
+    'Kültür & Tarih': {
+      'icon': '🏛️',
+      'color': Color(0xFF9C27B0),
+      'description': 'Müzeler, tarihi yapılar, şehir turları',
+    },
+    'Deniz & Tatil': {
+      'icon': '🏖️',
+      'color': Color(0xFF1976D2),
+      'description': 'Plajlar, yaz tatili, resortlar, yüzme',
+    },
+    'Macera & Spor': {
+      'icon': '🧗',
+      'color': Color(0xFFF57C00),
+      'description': 'Rafting, paraşüt, safari, bisiklet',
+    },
+    'Yeme & İçme': {
+      'icon': '🍽️',
+      'color': Color(0xFFE91E63),
+      'description': 'Gurme turları, yöresel yemek deneyimi',
+    },
+    'Festival & Etkinlik': {
+      'icon': '🎭',
+      'color': Color(0xFF673AB7),
+      'description': 'Konserler, yerel festivaller, gösteriler',
+    },
+    'Alışveriş Turları': {
+      'icon': '🛍️',
+      'color': Color(0xFF795548),
+      'description': 'Outlet merkezleri, pazarlar, hediyelik eşyalar',
+    },
+    'İnanç Turizmi': {
+      'icon': '🕌',
+      'color': Color(0xFF607D8B),
+      'description': 'Dini yapılar, hac turları, camiler',
+    },
+    'Sağlık & Termal Turizm': {
+      'icon': '🏥',
+      'color': Color(0xFF009688),
+      'description': 'Spa, kaplıca, sağlık merkezleri',
+    },
+    'Eğitim & Dil Turları': {
+      'icon': '🏫',
+      'color': Color(0xFFFF5722),
+      'description': 'Dil okulları, kültür değişim programları',
+    },
+  };
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
@@ -263,7 +303,7 @@ class _AddTourScreenState extends State<AddTourScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Column(
-                                children: _availableCategories.map((category) {
+                                children: categoryDetails.keys.map((category) {
                                   return CheckboxListTile(
                                     title: Text(category),
                                     value: _selectedCategories.contains(category),
@@ -298,15 +338,30 @@ class _AddTourScreenState extends State<AddTourScreen> {
                             ),
                             const SizedBox(height: 8),
                             Wrap(
-                              spacing: 8.0,
-                              runSpacing: 4.0,
-                              children: _availableCategories.map((category) {
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: categoryDetails.entries.map((entry) {
+                                final category = entry.key;
+                                final details = entry.value;
+                                final isSelected = _selectedCategories.contains(category);
                                 return FilterChip(
-                                  label: Text(category),
-                                  selected: _selectedCategories.contains(category),
-                                  selectedColor: Colors.blue.shade100,
-                                  checkmarkColor: Colors.blue.shade900,
-                                  onSelected: (bool selected) {
+                                  selected: isSelected,
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        details['icon'] as String,
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        category,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                  tooltip: details['description'] as String,
+                                  onSelected: (selected) {
                                     setState(() {
                                       if (selected) {
                                         _selectedCategories.add(category);
@@ -315,6 +370,10 @@ class _AddTourScreenState extends State<AddTourScreen> {
                                       }
                                     });
                                   },
+                                  backgroundColor: Colors.white,
+                                  selectedColor: (details['color'] as Color).withOpacity(0.2),
+                                  checkmarkColor: details['color'] as Color,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
                                 );
                               }).toList(),
                             ),

@@ -66,7 +66,7 @@ class CategoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveHelper.isDesktop(context);
-    final crossAxisCount = isDesktop ? 2 : 1;
+    final crossAxisCount = isDesktop ? 3 : 2;
 
     return Scaffold(
       appBar: showAppBar
@@ -80,7 +80,7 @@ class CategoriesScreen extends StatelessWidget {
         padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: crossAxisCount,
-          childAspectRatio: isDesktop ? 2 : 1.5,
+          childAspectRatio: isDesktop ? 1.2 : 0.85,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -88,55 +88,107 @@ class CategoriesScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final categoryName = categoryDetails.keys.elementAt(index);
           final details = categoryDetails[categoryName]!;
+          final color = details['color'] as Color;
 
-          return Card(
-            elevation: 4,
-            margin: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 8)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  CategoryTripsScreen.routeName,
-                  arguments: {
-                    'category': categoryName,
-                    'color': categoryDetails[categoryName]!['color'],
-                    'icon': categoryDetails[categoryName]!['icon'],
-                    'description': categoryDetails[categoryName]!['description'],
-                  },
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      details['icon'] as String,
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getFontSize(context, 48),
-                      ),
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            child: Material(
+              borderRadius: BorderRadius.circular(20),
+              elevation: 8,
+              shadowColor: color.withOpacity(0.3),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    CategoryTripsScreen.routeName,
+                    arguments: {
+                      'category': categoryName,
+                      'color': color,
+                      'icon': details['icon'],
+                      'description': details['description'],
+                    },
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color.withOpacity(0.1),
+                        color.withOpacity(0.2),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      categoryName,
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getFontSize(context, 18),
-                        fontWeight: FontWeight.bold,
+                  ),
+                  child: Stack(
+                    children: [
+                      // Büyük yarı saydam emoji arka planda
+                      Positioned(
+                        right: -20,
+                        bottom: -20,
+                        child: Text(
+                          details['icon'] as String,
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getFontSize(context, 60),
+                            color: color.withOpacity(0.1),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      details['description'] as String,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getFontSize(context, 14),
+                      // Ana içerik
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // İkon container'ı
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: color.withOpacity(0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                details['icon'] as String,
+                                style: TextStyle(
+                                  fontSize: ResponsiveHelper.getFontSize(context, 24),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Kategori adı
+                            Text(
+                              categoryName,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getFontSize(context, 16),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            // Açıklama
+                            Text(
+                              details['description'] as String,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getFontSize(context, 14),
+                                color: Colors.black54,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

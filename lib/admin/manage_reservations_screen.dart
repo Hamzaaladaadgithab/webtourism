@@ -194,7 +194,7 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rezervasyonları Yönet'),
+        title: const Text('Rezervasyonları Yönet' , style: TextStyle(color: Colors.white,)),
         backgroundColor: Colors.blue.shade900,
         centerTitle: true,
       ),

@@ -188,7 +188,10 @@ class _TabsScreenState extends State<TabsScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue.shade900,
-        title: Text(_screens[_selectedScreenIndex]['Title']),
+        title: Text(
+          _screens[_selectedScreenIndex]['Title'],
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         automaticallyImplyLeading: false,
         centerTitle: true,
         elevation: 0,
