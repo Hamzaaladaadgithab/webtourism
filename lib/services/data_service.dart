@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/category.dart';
 import '../models/trip.dart';
-import '../models/category.dart' as app_category;
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -112,22 +112,20 @@ class DataService {
   }
 
   // Kategorileri gerçek zamanlı dinle
-  Stream<List<app_category.Category>> getCategoriesStream() {
-    try {
-      return _db.collection('categories').snapshots().map((snapshot) {
-        return snapshot.docs.map((doc) {
-          final data = doc.data();
-          return app_category.Category(
-            id: doc.id,
-            title: data['title'] ?? 'Isimsiz Kategori',
-            imageUrl: data['imageUrl'] ?? '',
-          );
-        }).toList();
-      });
-    } catch (e) {
-      print('Kategoriler dinlenirken hata: $e');
-      return Stream.value([]);
-    }
+  Stream<List<Category>> getCategoriesStream() {
+    return _db.collection('categories').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Category(
+          id: doc.id,
+          name: data['name'] ?? '',
+          description: data['description'] ?? '',
+          icon: data['icon'] ?? '',
+          isActive: data['isActive'] ?? false,
+          subCategories: List<String>.from(data['subCategories'] ?? []),
+        );
+      }).toList();
+    });
   }
 
   // Turları gerçek zamanlı dinle
@@ -164,19 +162,22 @@ class DataService {
   }
 
   // Kategorileri çek
-  Future<List<app_category.Category>> getCategories() async {
+  Future<List<Category>> getCategories() async {
     try {
       final snapshot = await _db.collection('categories').get();
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        return app_category.Category(
+        return Category(
           id: doc.id,
-          title: data['title'] as String? ?? 'Isimsiz Kategori',
-          imageUrl: data['imageUrl'] as String? ?? '',
+          name: data['name'] ?? '',
+          description: data['description'] ?? '',
+          icon: data['icon'] ?? '',
+          isActive: data['isActive'] ?? false,
+          subCategories: List<String>.from(data['subCategories'] ?? []),
         );
       }).toList();
     } catch (e) {
-      print('Kategoriler çekilirken hata: ${e.toString()}');
+      print('Error getting categories: $e');
       return [];
     }
   }

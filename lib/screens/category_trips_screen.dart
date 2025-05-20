@@ -22,7 +22,7 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
   Set<String> _favorites = {};
   late String _category;
   late Color _categoryColor;
-  late IconData _categoryIcon;
+  late String _categoryIcon;
   late String _categoryDescription;
 
   @override
@@ -175,7 +175,7 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
     final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _category = args['category'] as String;
     _categoryColor = args['color'] as Color;
-    _categoryIcon = args['icon'] as IconData;
+    _categoryIcon = args['icon'] as String;
     _categoryDescription = args['description'] as String;
   }
 
@@ -194,7 +194,7 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(_categoryIcon, size: 24),
+            Text(_categoryIcon, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

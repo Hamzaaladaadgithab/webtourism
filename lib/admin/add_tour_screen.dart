@@ -26,10 +26,16 @@ class _AddTourScreenState extends State<AddTourScreen> {
   
   // Sabit kategori listesi
   final List<String> _availableCategories = [
-    'Doğa Turizmi',
-    'Kültür Turizmi',
-    'Macera Turizmi',
-    'Eğitim Turizmi'
+    'Doğa & Ekoturizm',
+    'Kültür & Tarih',
+    'Deniz & Tatil',
+    'Macera & Spor',
+    'Yeme & İçme',
+    'Festival & Etkinlik',
+    'Alışveriş Turları',
+    'İnanç Turizmi',
+    'Sağlık & Termal Turizm',
+    'Eğitim & Dil Turları',
   ];
 
   Future<void> _submitForm() async {

@@ -11,25 +11,55 @@ class CategoriesScreen extends StatelessWidget {
 
   // Her kategori için simge ve renk tanımları
   final Map<String, Map<String, dynamic>> categoryDetails = const {
-    'Doğa Turizmi': {
-      'icon': Icons.landscape,
+    'Doğa & Ekoturizm': {
+      'icon': '🏞️',
       'color': Color(0xFF4CAF50),
-      'description': 'Doğanın güzelliğini keşfedin',
+      'description': 'Dağ, yayla, yürüyüş, doğal parklar, kamp',
     },
-    'Kültür Turizmi': {
-      'icon': Icons.museum,
+    'Kültür & Tarih': {
+      'icon': '🏛️',
       'color': Color(0xFF9C27B0),
-      'description': 'Tarihi ve kültürel deneyimler',
+      'description': 'Müzeler, tarihi yapılar, şehir turları',
     },
-    'Macera Turizmi': {
-      'icon': Icons.terrain,
-      'color': Color(0xFFF57C00),
-      'description': 'Heyecan dolu aktiviteler',
-    },
-    'Eğitim Turizmi': {
-      'icon': Icons.school,
+    'Deniz & Tatil': {
+      'icon': '🏖️',
       'color': Color(0xFF1976D2),
-      'description': 'Öğrenerek seyahat edin',
+      'description': 'Plajlar, yaz tatili, resortlar, yüzme',
+    },
+    'Macera & Spor': {
+      'icon': '🧗',
+      'color': Color(0xFFF57C00),
+      'description': 'Rafting, paraşüt, safari, bisiklet',
+    },
+    'Yeme & İçme': {
+      'icon': '🍽️',
+      'color': Color(0xFFE91E63),
+      'description': 'Gurme turları, yöresel yemek deneyimi',
+    },
+    'Festival & Etkinlik': {
+      'icon': '🎭',
+      'color': Color(0xFF673AB7),
+      'description': 'Konserler, yerel festivaller, gösteriler',
+    },
+    'Alışveriş Turları': {
+      'icon': '🛍️',
+      'color': Color(0xFF795548),
+      'description': 'Outlet merkezleri, pazarlar, hediyelik eşyalar',
+    },
+    'İnanç Turizmi': {
+      'icon': '🕌',
+      'color': Color(0xFF607D8B),
+      'description': 'Dini yapılar, hac turları, camiler',
+    },
+    'Sağlık & Termal Turizm': {
+      'icon': '🏥',
+      'color': Color(0xFF009688),
+      'description': 'Spa, kaplıca, sağlık merkezleri',
+    },
+    'Eğitim & Dil Turları': {
+      'icon': '🏫',
+      'color': Color(0xFFFF5722),
+      'description': 'Dil okulları, kültür değişim programları',
     },
   };
 
@@ -84,10 +114,11 @@ class CategoriesScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      details['icon'] as IconData,
-                      size: ResponsiveHelper.getFontSize(context, 48),
-                      color: details['color'] as Color,
+                    Text(
+                      details['icon'] as String,
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getFontSize(context, 48),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
