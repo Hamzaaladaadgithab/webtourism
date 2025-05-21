@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../services/admin_service.dart';
 import 'add_tour_screen.dart';
+import 'edit_tour_screen.dart';
 import '../utils/responsive_helper.dart';
 
 class ManageToursScreen extends StatefulWidget {
@@ -119,10 +120,11 @@ class _ManageToursScreenState extends State<ManageToursScreen> {
                           icon: const Icon(Icons.edit),
                           color: Colors.blue,
                           onPressed: () {
-                            Navigator.pushNamed(
+                            Navigator.push(
                               context,
-                              '/edit-tour',
-                              arguments: trip,
+                              MaterialPageRoute(
+                                builder: (context) => EditTourScreen(trip: trip),
+                              ),
                             );
                           },
                         ),

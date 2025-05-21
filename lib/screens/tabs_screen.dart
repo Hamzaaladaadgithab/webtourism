@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/categories_screen.dart';
-import '../screens/favorites_screen.dart';
-import '../screens/user_reservations_screen.dart';
+import 'package:tourism/screens/favorites_screen.dart';
+import 'package:tourism/screens/user_reservations_screen.dart';
+import 'package:tourism/services/notification_scheduler.dart';
 import '../screens/profile_screen.dart';
 import '../screens/search_screen.dart';
 import '../models/trip.dart';
@@ -132,8 +133,10 @@ class _TabsScreenState extends State<TabsScreen> {
   }
 
   @override
-  void initState() { 
+  void initState() {
     super.initState();
+    // Her uygulama açılışında bildirimleri kontrol et
+    NotificationScheduler().checkNotifications();
 
     _setupDataStream();
     _screens = [

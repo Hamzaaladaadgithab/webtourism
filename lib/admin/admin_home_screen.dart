@@ -1,13 +1,178 @@
 import 'package:flutter/material.dart';
-import 'add_tour_screen.dart';
-import 'manage_tours_screen.dart';
-import 'manage_reservations_screen.dart';
-import 'manage_users_screen.dart';
-
 import '../utils/responsive_helper.dart';
+import 'add_tour_screen.dart';
+import 'manage_reservations_screen.dart';
+import 'notifications_screen.dart';
+import 'statistics_screen.dart';
+import 'manage_users_screen.dart';
+import 'manage_tours_screen.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
-class AdminHomeScreen extends StatelessWidget {
+class AdminMenuItem {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final Widget screen;
+
+  const AdminMenuItem({
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    required this.screen,
+  });
+}
+
+class AdminHomeScreen extends StatefulWidget {
   static const routeName = '/admin-home';
+
+  const AdminHomeScreen({super.key});
+
+  @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  final List<AdminMenuItem> _menuItems = [
+    AdminMenuItem(
+      title: 'Tur Ekle',
+      subtitle: 'Yeni tur oluştur',
+      icon: MdiIcons.plusCircleOutline,
+      screen: const AddTourScreen(),
+    ),
+    AdminMenuItem(
+      title: 'Turları Yönet',
+      subtitle: 'Turları düzenle ve sil',
+      icon: MdiIcons.bus,
+      screen: ManageToursScreen(),
+    ),
+    AdminMenuItem(
+      title: 'Rezervasyonlar',
+      subtitle: 'Rezervasyonları görüntüle ve yönet',
+      icon: MdiIcons.bookOutline,
+      screen: const ManageReservationsScreen(),
+    ),
+    AdminMenuItem(
+      title: 'Kullanıcılar',
+      subtitle: 'Kullanıcıları yönet',
+      icon: MdiIcons.accountGroup,
+      screen: ManageUsersScreen(),
+    ),
+    AdminMenuItem(
+      title: 'Bildirimler',
+      subtitle: 'Bildirimleri görüntüle ve yönet',
+      icon: MdiIcons.bellOutline,
+      screen: const NotificationsScreen(),
+    ),
+
+    AdminMenuItem(
+      title: 'İstatistikler',
+      subtitle: 'Tur istatistiklerini görüntüle',
+      icon: MdiIcons.chartLine,
+      screen: const StatisticsScreen(),
+    ),
+  ];
+
+  Widget _buildWelcomeCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.admin_panel_settings,
+            size: ResponsiveHelper.getFontSize(context, 48),
+            color: Colors.blue.shade900,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tur Yönetim Sistemi',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getFontSize(context, 24),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Admin Paneline Hoş Geldiniz...',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getFontSize(context, 16),
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(BuildContext context, AdminMenuItem menuItem) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => menuItem.screen),
+          );
+        },
+        child: Padding(
+          padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                menuItem.icon,
+                size: ResponsiveHelper.getFontSize(context, 32),
+                color: Colors.blue.shade900,
+              ),
+              SizedBox(height: ResponsiveHelper.getFontSize(context, 8)),
+              Text(
+                menuItem.title,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getFontSize(context, 18),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade900,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (menuItem.subtitle != null) ...[
+                SizedBox(height: ResponsiveHelper.getFontSize(context, 4)),
+                Text(
+                  menuItem.subtitle!,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getFontSize(context, 14),
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,189 +187,32 @@ class AdminHomeScreen extends StatelessWidget {
         ),
         backgroundColor: Colors.blue.shade900,
         foregroundColor: Colors.white,
+        // Bildirim butonu kaldırıldı
       ),
       body: Container(
-        color: Colors.grey.shade50,
+        color: Colors.grey[100],
         child: SafeArea(
           child: Padding(
-            padding: ResponsiveHelper.getPadding(context),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Ekran genişliğine göre grid sütun sayısını ayarla
-                int crossAxisCount = ResponsiveHelper.isDesktop(context) ? 4 : 
-                                  ResponsiveHelper.isTablet(context) ? 3 : 2;
-                
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Hoş geldiniz kartı
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 12)),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.admin_panel_settings,
-                              color: Colors.blue.shade900,
-                              size: 24,
-                            ),
-                          ),
-                          SizedBox(width: ResponsiveHelper.getFontSize(context, 16)),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Hoş Geldiniz',
-                                  style: TextStyle(
-                                    fontSize: ResponsiveHelper.getFontSize(context, 24),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'Turizm Yönetim Sistemi',
-                                  style: TextStyle(
-                                    fontSize: ResponsiveHelper.getFontSize(context, 16),
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+            padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWelcomeCard(context),
+                SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: ResponsiveHelper.isMobile(context) ? 2 : 3,
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: ResponsiveHelper.getFontSize(context, 16),
+                      mainAxisSpacing: ResponsiveHelper.getFontSize(context, 16),
                     ),
-                    SizedBox(height: ResponsiveHelper.getFontSize(context, 24)),
-                    // Admin kartları grid
-                    Expanded(
-                      child: GridView.count(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: ResponsiveHelper.getFontSize(context, 16),
-                        crossAxisSpacing: ResponsiveHelper.getFontSize(context, 16),
-                        childAspectRatio: 1.1,
-                        children: [
-                          _buildAdminCard(
-                            context,
-                            'Yeni Gezi Ekle',
-                            Icons.add_circle_outline,
-                            Colors.green,
-                            () => Navigator.of(context).pushNamed(AddTourScreen.routeName),
-                          ),
-                          _buildAdminCard(
-                            context,
-                            'Gezileri Yönet',
-                            Icons.travel_explore,
-                            Colors.blue,
-                            () => Navigator.of(context).pushNamed(ManageToursScreen.routeName),
-                          ),
-                          _buildAdminCard(
-                            context,
-                            'Rezervasyonlar',
-                            Icons.calendar_today,
-                            Colors.orange,
-                            () => Navigator.of(context).pushNamed(ManageReservationsScreen.routeName),
-                          ),
-                          _buildAdminCard(
-                            context,
-                            'Kullanıcılar',
-                            Icons.people_outline,
-                            Colors.purple,
-                            () => Navigator.of(context).pushNamed(ManageUsersScreen.routeName),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAdminCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withOpacity(0.1),
-                color.withOpacity(0.2),
+                    itemCount: _menuItems.length,
+                    itemBuilder: (context, index) => _buildMenuItem(context, _menuItems[index]),
+                  ),
+                ),
               ],
             ),
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              double iconSize = ResponsiveHelper.getFontSize(context, 32);
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 12)),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      icon,
-                      size: iconSize,
-                      color: color,
-                    ),
-                  ),
-                  SizedBox(height: ResponsiveHelper.getFontSize(context, 16)),
-                  Flexible(
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getFontSize(context, 16),
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    ),
-                  ),
-                ],
-              );
-            },
           ),
         ),
       ),

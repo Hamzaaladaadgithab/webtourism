@@ -112,6 +112,7 @@ class _EditTourScreenState extends State<EditTourScreen> {
 
     try {
       final updatedTrip = Trip(
+        createdAt: widget.trip.createdAt,
         id: widget.trip.id,
         title: _titleController.text,
         description: _descriptionController.text,

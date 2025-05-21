@@ -6,6 +6,8 @@ import '../utils/responsive_helper.dart';
 class AddTourScreen extends StatefulWidget {
   static const routeName = '/add-tour';
 
+  const AddTourScreen({Key? key}) : super(key: key);
+
   @override
   State<AddTourScreen> createState() => _AddTourScreenState();
 }
@@ -91,15 +93,16 @@ class _AddTourScreenState extends State<AddTourScreen> {
 
     try {
       final trip = Trip(
+        createdAt: DateTime.now(),
         id: DateTime.now().toString(),
         title: _titleController.text,
         description: _descriptionController.text,
-        location: _locationController.text,
-        price: double.parse(_priceController.text),
-        categories: _selectedCategories,
         imageUrl: _imageUrlController.text,
+        price: double.parse(_priceController.text),
+        location: _locationController.text,
         startDate: _startDate!,
         endDate: _endDate!,
+        categories: _selectedCategories,
         status: TripStatus.AVAILABLE,
         duration: int.parse(_durationController.text),
         capacity: int.parse(_capacityController.text),
