@@ -186,11 +186,7 @@ class NotificationService {
     print('Creating notification: $title - $message - $type');
     try {
       // FCM bildirimi gönder
-      await _fcmProvider.sendNotification(
-        topic: 'admin_notifications',
-        title: title,
-        body: message,
-      );
+      await _fcmProvider.sendNotification('admin_notifications', title, message);
 
       print('FCM notification sent successfully');
 

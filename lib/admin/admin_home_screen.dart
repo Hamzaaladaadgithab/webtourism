@@ -137,34 +137,38 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           );
         },
         child: Padding(
-          padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 16)),
+          padding: EdgeInsets.all(ResponsiveHelper.getFontSize(context, 12)),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 menuItem.icon,
-                size: ResponsiveHelper.getFontSize(context, 32),
+                size: ResponsiveHelper.getFontSize(context, 28),
                 color: Colors.blue.shade900,
               ),
-              SizedBox(height: ResponsiveHelper.getFontSize(context, 8)),
+              SizedBox(height: ResponsiveHelper.getFontSize(context, 6)),
               Text(
                 menuItem.title,
                 style: TextStyle(
-                  fontSize: ResponsiveHelper.getFontSize(context, 18),
+                  fontSize: ResponsiveHelper.getFontSize(context, 16),
                   fontWeight: FontWeight.bold,
                   color: Colors.blue.shade900,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               if (menuItem.subtitle != null) ...[
                 SizedBox(height: ResponsiveHelper.getFontSize(context, 4)),
                 Text(
                   menuItem.subtitle!,
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getFontSize(context, 14),
+                    fontSize: ResponsiveHelper.getFontSize(context, 12),
                     color: Colors.grey,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ],
@@ -203,7 +207,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   child: GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: ResponsiveHelper.isMobile(context) ? 2 : 3,
-                      childAspectRatio: 1.5,
+                      childAspectRatio: ResponsiveHelper.isMobile(context) ? 1.0 : 1.2,
                       crossAxisSpacing: ResponsiveHelper.getFontSize(context, 16),
                       mainAxisSpacing: ResponsiveHelper.getFontSize(context, 16),
                     ),

@@ -1,47 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:tourism/services/fcm_service.dart';
-import 'package:tourism/services/fcm_service_web.dart';
+import '../services/fcm_service.dart';
+import '../services/fcm_service_factory.dart';
 
 class FCMProvider extends ChangeNotifier {
-  final FCMService _fcmService = FCMService();
-  final FCMServiceWeb _fcmServiceWeb = FCMServiceWeb();
+  final FCMService _fcmService = FCMServiceFactory.create();
 
   Future<void> initialize() async {
-    if (kIsWeb) {
-      await _fcmServiceWeb.initialize();
-    } else {
-      await _fcmService.initialize();
-    }
+    await _fcmService.initialize();
+  }
+
+  Future<String?> getToken() async {
+    return await _fcmService.getToken();
+  }
+
+  void showNotification(String title, String body) {
+    _fcmService.showNotification(title, body);
   }
 
   Future<void> subscribeToTopic(String topic) async {
-    if (kIsWeb) {
-      await _fcmServiceWeb.subscribeToTopic(topic);
-    } else {
-      await _fcmService.subscribeToTopic(topic);
-    }
+    await _fcmService.subscribeToTopic(topic);
   }
 
   Future<void> unsubscribeFromTopic(String topic) async {
-    if (kIsWeb) {
-      await _fcmServiceWeb.unsubscribeFromTopic(topic);
-    } else {
-      await _fcmService.unsubscribeFromTopic(topic);
-    }
+    await _fcmService.unsubscribeFromTopic(topic);
   }
 
-  Future<void> sendNotification({
-    required String topic,
-    required String title,
-    required String body,
-    Map<String, dynamic>? data,
-  }) async {
-    await _fcmService.sendNotificationToTopic(
-      topic: topic,
-      title: title,
-      body: body,
-      data: data,
-    );
+  Future<void> sendNotification(String topic, String title, String body) async {
+    await _fcmService.sendNotificationToTopic(topic, title, body);
   }
 }

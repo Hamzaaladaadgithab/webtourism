@@ -1,47 +1,46 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'fcm_service.dart';
 
-class FCMServiceWeb implements FCMService {
-  FCMServiceWeb._();
-  static final FCMServiceWeb _instance = FCMServiceWeb._();
-  static FCMServiceWeb get instance => _instance;
+class FCMServiceMobile implements FCMService {
+  FCMServiceMobile._();
+  static final FCMServiceMobile _instance = FCMServiceMobile._();
+  static FCMServiceMobile get instance => _instance;
 
   late final FirebaseMessaging _messaging;
 
   @override
   Future<void> initialize() async {
-    if (!kIsWeb) return;
-
     try {
       await Firebase.initializeApp();
       _messaging = FirebaseMessaging.instance;
 
+      // Request permission for iOS
       NotificationSettings settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
         provisional: false,
       );
-      print('Web notification permission status: ${settings.authorizationStatus}');
+      print('Mobile notification permission status: ${settings.authorizationStatus}');
 
       String? token = await getToken();
-      print('Web FCM Token: $token');
+      print('Mobile FCM Token: $token');
 
       _setupMessageHandlers();
     } catch (e) {
-      print('Error initializing Web FCM: $e');
+      print('Error initializing Mobile FCM: $e');
     }
   }
 
   void _setupMessageHandlers() {
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    FirebaseMessaging.instance.getInitialMessage().then(_handleInitialMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
-    print('Web foreground message received:');
+    print('Mobile foreground message received:');
     _printMessageDetails(message);
     showNotification(
       message.notification?.title ?? 'New Message',
@@ -49,8 +48,15 @@ class FCMServiceWeb implements FCMService {
     );
   }
 
+  void _handleInitialMessage(RemoteMessage? message) {
+    if (message != null) {
+      print('Mobile app opened from terminated state with message:');
+      _printMessageDetails(message);
+    }
+  }
+
   void _handleMessageOpenedApp(RemoteMessage message) {
-    print('Web notification clicked:');
+    print('Mobile notification clicked:');
     _printMessageDetails(message);
   }
 
@@ -71,49 +77,42 @@ class FCMServiceWeb implements FCMService {
 
   @override
   Future<String?> getToken() async {
-    if (!kIsWeb) return null;
     try {
-      return await _messaging.getToken(
-        vapidKey: 'YOUR-VAPID-KEY', // Replace with your VAPID key from Firebase Console
-      );
+      return await _messaging.getToken();
     } catch (e) {
-      print('Error getting web FCM token: $e');
+      print('Error getting mobile FCM token: $e');
       return null;
     }
   }
 
   @override
   void showNotification(String title, String body) {
-    if (!kIsWeb) return;
     try {
-      // Use the Web Notifications API
-      print('Showing web notification:');
+      print('Showing mobile notification:');
       print('Title: $title');
       print('Body: $body');
     } catch (e) {
-      print('Web notification error: $e');
+      print('Mobile notification error: $e');
     }
   }
 
   @override
   Future<void> subscribeToTopic(String topic) async {
-    if (!kIsWeb) return;
     try {
       await _messaging.subscribeToTopic(topic);
-      print('Web: Subscribed to topic: $topic');
+      print('Mobile: Subscribed to topic: $topic');
     } catch (e) {
-      print('Error subscribing to topic on web: $e');
+      print('Error subscribing to topic on mobile: $e');
     }
   }
 
   @override
   Future<void> unsubscribeFromTopic(String topic) async {
-    if (!kIsWeb) return;
     try {
       await _messaging.unsubscribeFromTopic(topic);
-      print('Web: Unsubscribed from topic: $topic');
+      print('Mobile: Unsubscribed from topic: $topic');
     } catch (e) {
-      print('Error unsubscribing from topic on web: $e');
+      print('Error unsubscribing from topic on mobile: $e');
     }
   }
 
