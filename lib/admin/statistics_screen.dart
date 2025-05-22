@@ -181,13 +181,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       // Rezervasyonları al
       QuerySnapshot<Map<String, dynamic>> reservationsSnapshot;
       try {
-        // Firestore'da status ve tripStartDate ile filtreleme yap
+        print('\n=== REZERVASYONLARI GETİRME ===');
+        // Önce tüm rezervasyonları al, sonra bellek üzerinde filtrele
         reservationsSnapshot = await FirebaseFirestore.instance
             .collection('reservations')
-            .where('status', isEqualTo: 'ReservationStatus.confirmed')
-            .where('tripStartDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            .where('tripStartDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
             .get();
+
+        print('Toplam rezervasyon sayısı: ${reservationsSnapshot.docs.length}');
       } catch (e, stackTrace) {
         print('Rezervasyonları getirirken hata oluştu: $e');
         print('Hata detayı: $stackTrace');
@@ -198,9 +198,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final filteredReservations = reservationsSnapshot.docs.where((doc) {
         try {
           final data = doc.data();
+          print('\nRezervasyon ham verisi:');
+          data.forEach((key, value) {
+            print('$key: $value');
+          });
+
           final status = data['status'] as String?;
-          final reservationStartDate = (data['tripStartDate'] as Timestamp?)?.toDate();
-          final reservationEndDate = (data['tripEndDate'] as Timestamp?)?.toDate();
+          
+          // Farklı alan isimlerini kontrol et
+          final reservationStartDate = (data['tripStartDate'] as Timestamp?)?.toDate() ?? 
+                                      (data['startDate'] as Timestamp?)?.toDate() ?? 
+                                      (data['tourStartDate'] as Timestamp?)?.toDate();
+
+          final reservationEndDate = (data['tripEndDate'] as Timestamp?)?.toDate() ?? 
+                                    (data['endDate'] as Timestamp?)?.toDate() ?? 
+                                    (data['tourEndDate'] as Timestamp?)?.toDate();
           
           // Debug bilgileri
           print('\nRezervasyon ID: ${doc.id}');
@@ -208,9 +220,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           print('- Başlangıç: $reservationStartDate');
           print('- Bitiş: $reservationEndDate');
           
-          // Önce status kontrolü
-          if (status != 'ReservationStatus.confirmed') {
-            print('${doc.id} - Geçersiz durum: $status');
+          // Status kontrolü - daha esnek kontrol
+          final normalizedStatus = (status ?? '').replaceAll('ReservationStatus.', '').toLowerCase();
+          print('${doc.id} - Durum: $status (normalized: $normalizedStatus)');
+          
+          if (normalizedStatus != 'confirmed') {
+            print('${doc.id} - Onaylanmamış rezervasyon: $status');
             return false;
           }
           
