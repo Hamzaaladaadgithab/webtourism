@@ -151,7 +151,7 @@ class ReservationCard extends StatelessWidget {
 
             // İptal Nedeni (eğer varsa)
             if (reservation.status == ReservationStatus.cancelled && 
-                reservation.cancellationReason != null) ...[  
+                reservation.cancelReason != null) ...[  
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -166,7 +166,7 @@ class ReservationCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'İptal Nedeni: ${reservation.cancellationReason}',
+                        'İptal Nedeni: ${reservation.cancelReason}',
                         style: TextStyle(
                           color: Colors.red[700],
                           fontWeight: FontWeight.w500,

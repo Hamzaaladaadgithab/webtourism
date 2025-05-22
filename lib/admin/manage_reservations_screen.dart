@@ -229,27 +229,26 @@ class _ManageReservationsScreenState extends State<ManageReservationsScreen> {
                     return Card(
                       margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text(
-                          'Müşteri: ${reservation.userName}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        title: Text('${reservation.tripTitle}'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('Müşteri: ${reservation.userName}'),
+                            Text('Telefon: ${reservation.userPhone}'),
+                            Text('Kişi Sayısı: ${reservation.numberOfPeople}'),
+                            Text('Toplam Ücret: ${reservation.totalPrice} TL'),
                             Text(
-                              'Tarih: ${DateFormat('dd/MM/yyyy').format(reservation.startDate)} - ${DateFormat('dd/MM/yyyy').format(reservation.endDate)}',
+                              'Başlangıç: ${DateFormat('dd/MM/yyyy HH:mm').format(reservation.startDate)}',
                             ),
                             Text(
-                              'Durum: ${_getStatusText(reservation.status)}',
-                              style: TextStyle(
-                                color: _getStatusColor(reservation.status),
-                                fontWeight: FontWeight.bold,
-                              ),
+                              'Bitiş: ${DateFormat('dd/MM/yyyy HH:mm').format(reservation.endDate)}',
                             ),
-                            if (reservation.status == ReservationStatus.cancelled)
+                            if (reservation.status == ReservationStatus.cancelled && 
+                                reservation.cancelReason != null && 
+                                reservation.cancelReason!.isNotEmpty)
                               Text(
-                                'İptal Nedeni: ${reservation.cancellationReason ?? 'Belirtilmemiş'}',
-                                style: const TextStyle(fontStyle: FontStyle.italic),
+                                'İptal Sebebi: ${reservation.cancelReason}',
+                                style: TextStyle(color: Colors.red),
                               ),
                           ],
                         ),

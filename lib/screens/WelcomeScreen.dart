@@ -13,7 +13,7 @@ class WelcomeScreen extends StatelessWidget {
         backgroundColor: Colors.blue.shade900,
         elevation: 0,
         title: Text(
-          'Hoş Geldiniz...',
+          'Tourism App',
           style: TextStyle(
             color: Colors.white,
             fontSize: ResponsiveHelper.getFontSize(context, 20),

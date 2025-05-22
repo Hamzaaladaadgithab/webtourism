@@ -51,7 +51,7 @@ class Reservation {
   final double totalPrice;
   final ReservationStatus status;
   final DateTime createdAt;
-  final String? cancellationReason;
+  final String? cancelReason;
 
   Reservation({
     required this.id,
@@ -67,7 +67,7 @@ class Reservation {
     required this.totalPrice,
     required this.status,
     required this.createdAt,
-    this.cancellationReason,
+    this.cancelReason,
   });
 
   factory Reservation.fromFirestore(String id, Map<String, dynamic> data) {
@@ -85,7 +85,7 @@ class Reservation {
       totalPrice: (data['totalPrice'] ?? 0).toDouble(),
       status: ReservationStatusExtension.fromString(data['status'] ?? 'ReservationStatus.pending'),
       createdAt: (data['createdAt'] as Timestamp).toDate(),
-      cancellationReason: data['cancellationReason'],
+      cancelReason: data['cancelReason'],
     );
   }
 
@@ -103,7 +103,7 @@ class Reservation {
       'totalPrice': totalPrice,
       'status': status.value,
       'createdAt': Timestamp.fromDate(createdAt),
-      if (cancellationReason != null) 'cancellationReason': cancellationReason,
+      if (cancelReason != null) 'cancelReason': cancelReason,
     };
   }
 
@@ -121,7 +121,7 @@ class Reservation {
     double? totalPrice,
     ReservationStatus? status,
     DateTime? createdAt,
-    String? cancellationReason,
+    String? cancelReason,
   }) {
     return Reservation(
       id: id ?? this.id,
@@ -137,7 +137,7 @@ class Reservation {
       totalPrice: totalPrice ?? this.totalPrice,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
-      cancellationReason: cancellationReason ?? this.cancellationReason,
+      cancelReason: cancelReason ?? this.cancelReason,
     );
   }
 }
