@@ -4,7 +4,15 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 // Grafik periyodu seçenekleri
-enum ChartPeriod { all, last7days, last30days, custom }
+enum ChartPeriod { 
+  all,
+  last7days,
+  last30days,
+  thisMonth,
+  lastMonth,
+  thisYear,
+  custom
+}
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -63,6 +71,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         case ChartPeriod.last30days:
           startDate = endDate.subtract(const Duration(days: 30));
           break;
+        case ChartPeriod.thisMonth:
+          startDate = DateTime(endDate.year, endDate.month, 1);
+          break;
+        case ChartPeriod.lastMonth:
+          final lastMonth = DateTime(endDate.year, endDate.month - 1);
+          startDate = DateTime(lastMonth.year, lastMonth.month, 1);
+          endDate = DateTime(endDate.year, endDate.month, 0);
+          break;
+        case ChartPeriod.thisYear:
+          startDate = DateTime(endDate.year, 1, 1);
+          break;
         case ChartPeriod.custom:
           if (_customStartDate == null || _customEndDate == null) {
             setState(() => _isLoading = false);
@@ -76,35 +95,168 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           break;
       }
 
-      // Firestore'dan paralel veri çekme
-      final futures = await Future.wait([
-        FirebaseFirestore.instance
+      print('Tarih Aralığı: ${startDate.toString()} - ${endDate.toString()}');
+
+      // Tüm turları al
+      print('Tarih Aralığı: $startDate - $endDate');
+      
+      QuerySnapshot<Map<String, dynamic>> tripsSnapshot;
+      try {
+        // Firestore'da startDate ile filtreleme yap
+        tripsSnapshot = await FirebaseFirestore.instance
             .collection('trips')
-            .where('isDeleted', isEqualTo: false)
-            .where('isDraft', isEqualTo: false)
             .where('startDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
             .where('startDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            .orderBy('startDate', descending: true)
-            .get(),
-        FirebaseFirestore.instance
+            .get();
+
+        print('\n=== TÜM TURLARIN DURUMU ===');
+        print('Toplam tur sayısı: ${tripsSnapshot.docs.length}');
+      } catch (e, stackTrace) {
+        print('Turları getirirken hata oluştu: $e');
+        print('Hata detayı: $stackTrace');
+        rethrow; // Hatayı yukarı seviyeye ilet
+      }
+
+      // Bellek üzerinde filtreleme yap
+      final filteredTrips = tripsSnapshot.docs.where((doc) {
+        try {
+          final data = doc.data();
+          
+          final tripStartDate = (data['startDate'] as Timestamp?)?.toDate();
+          final tripEndDate = (data['endDate'] as Timestamp?)?.toDate();
+          final isDeleted = data['isDeleted'] as bool? ?? false;
+          final status = data['status'] as String? ?? 'AVAILABLE';
+          final normalizedStatus = status.replaceAll('TripStatus.', '');
+          
+          // Debug bilgileri
+          print('\nTur ID: ${doc.id}');
+          print('- Başlangıç: $tripStartDate');
+          print('- Bitiş: $tripEndDate');
+          print('- Status: $status (normalized: $normalizedStatus)');
+          print('- Silinmiş: $isDeleted');
+          
+          // Temel kontroller
+          if (tripStartDate == null || tripEndDate == null) {
+            print('${doc.id} - Tarih bilgisi eksik');
+            return false;
+          }
+
+          if (isDeleted) {
+            print('${doc.id} - Silinmiş tur');
+            return false;
+          }
+
+          if (normalizedStatus != 'AVAILABLE') {
+            print('❌ Geçersiz durum: $status');
+            return false;
+          }
+
+          // Tarih kontrolleri
+          final isStartDateInRange = tripStartDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+                                    tripStartDate.isBefore(endDate.add(const Duration(days: 1)));
+          
+          final isEndDateInRange = tripEndDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+                                  tripEndDate.isBefore(endDate.add(const Duration(days: 1)));
+          
+          final isSpanningRange = tripStartDate.isBefore(startDate) && tripEndDate.isAfter(endDate);
+          
+          final isInDateRange = isStartDateInRange || isEndDateInRange || isSpanningRange;
+          
+          if (!isInDateRange) {
+            print('${doc.id} - Tarih aralığı dışında:');
+            print('- Tur tarihleri: $tripStartDate - $tripEndDate');
+            print('- Seçili aralık: $startDate - $endDate');
+            return false;
+          }
+          
+          print('${doc.id} - Tur kabul edildi');
+          return true;
+        } catch (e, stackTrace) {
+          print('Tur verisi işlenirken hata: $e');
+          print('Hata detayı: $stackTrace');
+          return false;
+        }
+      }).toList();
+
+      // Rezervasyonları al
+      QuerySnapshot<Map<String, dynamic>> reservationsSnapshot;
+      try {
+        // Firestore'da status ve tripStartDate ile filtreleme yap
+        reservationsSnapshot = await FirebaseFirestore.instance
             .collection('reservations')
-            .where('status', whereIn: ['confirmed', 'completed'])
-            .where('tripStartDate', isGreaterThanOrEqualTo: startDate)
-            .where('tripStartDate', isLessThanOrEqualTo: endDate)
-            .orderBy('tripStartDate', descending: true)
-            .get()
-      ]);
+            .where('status', isEqualTo: 'ReservationStatus.confirmed')
+            .where('tripStartDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+            .where('tripStartDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+            .get();
+      } catch (e, stackTrace) {
+        print('Rezervasyonları getirirken hata oluştu: $e');
+        print('Hata detayı: $stackTrace');
+        rethrow; // Hatayı yukarı seviyeye ilet
+      }
+
+      // Rezervasyonları bellek üzerinde filtrele
+      final filteredReservations = reservationsSnapshot.docs.where((doc) {
+        try {
+          final data = doc.data();
+          final status = data['status'] as String?;
+          final reservationStartDate = (data['tripStartDate'] as Timestamp?)?.toDate();
+          final reservationEndDate = (data['tripEndDate'] as Timestamp?)?.toDate();
+          
+          // Debug bilgileri
+          print('\nRezervasyon ID: ${doc.id}');
+          print('- Status: $status');
+          print('- Başlangıç: $reservationStartDate');
+          print('- Bitiş: $reservationEndDate');
+          
+          // Önce status kontrolü
+          if (status != 'ReservationStatus.confirmed') {
+            print('${doc.id} - Geçersiz durum: $status');
+            return false;
+          }
+          
+          if (reservationStartDate == null || reservationEndDate == null) {
+            print('${doc.id} - Tarih bilgisi eksik');
+            return false;
+          }
+
+          // Tarih kontrolleri
+          final isStartDateInRange = reservationStartDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+                                    reservationStartDate.isBefore(endDate.add(const Duration(days: 1)));
+          
+          final isEndDateInRange = reservationEndDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+                                  reservationEndDate.isBefore(endDate.add(const Duration(days: 1)));
+          
+          final isSpanningRange = reservationStartDate.isBefore(startDate) && reservationEndDate.isAfter(endDate);
+          
+          final isInDateRange = isStartDateInRange || isEndDateInRange || isSpanningRange;
+          
+          if (!isInDateRange) {
+            print('${doc.id} - Tarih aralığı dışında:');
+            print('- Rezervasyon tarihleri: $reservationStartDate - $reservationEndDate');
+            print('- Seçili aralık: $startDate - $endDate');
+            return false;
+          }
+          
+          print('${doc.id} - Rezervasyon kabul edildi');
+          return true;
+        } catch (e, stackTrace) {
+          print('Rezervasyon verisi işlenirken hata: $e');
+          print('Hata detayı: $stackTrace');
+          return false;
+        }
+        
+
+      }).toList();
 
       if (!mounted) return;
 
-      // Verileri state'e kaydet
       setState(() {
         _trips
           ..clear()
-          ..addAll(futures[0].docs.map((doc) => {...doc.data(), 'id': doc.id}));
+          ..addAll(filteredTrips.map((doc) => {...doc.data(), 'id': doc.id}));
         _reservations
           ..clear()
-          ..addAll(futures[1].docs.map((doc) => {...doc.data(), 'id': doc.id}));
+          ..addAll(filteredReservations.map((doc) => {...doc.data(), 'id': doc.id}));
         _isLoading = false;
       });
     } catch (error) {
@@ -213,7 +365,55 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   },
                 ),
                 ChoiceChip(
-                  label: const Text('Özel'),
+                  label: const Text('Bu Ay'),
+                  selected: _selectedPeriod == ChartPeriod.thisMonth,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedPeriod = ChartPeriod.thisMonth;
+                        _customStartDate = null;
+                        _customEndDate = null;
+                        _startDateController.clear();
+                        _endDateController.clear();
+                      });
+                      _loadTrips();
+                    }
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Geçen Ay'),
+                  selected: _selectedPeriod == ChartPeriod.lastMonth,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedPeriod = ChartPeriod.lastMonth;
+                        _customStartDate = null;
+                        _customEndDate = null;
+                        _startDateController.clear();
+                        _endDateController.clear();
+                      });
+                      _loadTrips();
+                    }
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Bu Yıl'),
+                  selected: _selectedPeriod == ChartPeriod.thisYear,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedPeriod = ChartPeriod.thisYear;
+                        _customStartDate = null;
+                        _customEndDate = null;
+                        _startDateController.clear();
+                        _endDateController.clear();
+                      });
+                      _loadTrips();
+                    }
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Özel Tarih'),
                   selected: _selectedPeriod == ChartPeriod.custom,
                   onSelected: (selected) {
                     if (selected) {
