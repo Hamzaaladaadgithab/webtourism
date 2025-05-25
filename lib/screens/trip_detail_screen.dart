@@ -25,6 +25,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   bool _isLoading = false;
   Trip? _trip;
 
+
   @override
   void initState() {
     super.initState();
@@ -172,11 +173,26 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (trip.imageUrl.isNotEmpty)
-                    Image.network(
-                      trip.imageUrl.startsWith('http') ? trip.imageUrl : 'https://images.unsplash.com/photo-1605540436563-5bca919ae766?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MXx8c2tpaW5nfGVufDB8fDB8&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: FadeInImage.assetNetwork(
+                        placeholder: 'images/travel.jpg',
+                        image: trip.imageUrl,
+                        width: double.infinity,
+                        height: MediaQuery.of(context).size.height * 0.45,
+                        fit: BoxFit.cover,
+                        fadeInDuration: const Duration(milliseconds: 300),
+                        fadeOutDuration: const Duration(milliseconds: 300),
+                        imageErrorBuilder: (context, error, stackTrace) {
+                          debugPrint('Image error: $error');
+                          return Image.asset(
+                            'images/travel.jpg',
+                            width: double.infinity,
+                            height: MediaQuery.of(context).size.height * 0.45,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
                     ),
                   Padding(
                     padding: const EdgeInsets.all(16.0),

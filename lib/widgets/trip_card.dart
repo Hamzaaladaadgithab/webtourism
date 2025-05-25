@@ -46,17 +46,17 @@ class TripCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: Image.network(
-                      trip.imageUrl,
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'images/travel.jpg',
+                      image: trip.imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.error_outline,
-                            size: 40,
-                            color: Colors.grey,
-                          ),
+                      fadeInDuration: const Duration(milliseconds: 300),
+                      fadeOutDuration: const Duration(milliseconds: 300),
+                      imageErrorBuilder: (context, error, stackTrace) {
+                        debugPrint('Image error: $error');
+                        return Image.asset(
+                          'images/travel.jpg',
+                          fit: BoxFit.cover,
                         );
                       },
                     ),

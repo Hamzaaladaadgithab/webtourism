@@ -193,12 +193,14 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(_categoryIcon, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Text(_category),
                 Text(
                   _categoryDescription,
@@ -206,8 +208,10 @@ class _CategoryTripsScreenState extends State<CategoryTripsScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.normal,
                   ),
+              
                 ),
               ],
+              ),
             ),
           ],
         ),
