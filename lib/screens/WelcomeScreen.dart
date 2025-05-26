@@ -56,7 +56,7 @@ class WelcomeScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               Image.asset(
-                                'images/tourism.png',
+                                'images/icon.png',
                                 height: ResponsiveHelper.getFontSize(context, 120),
                                 width: ResponsiveHelper.getFontSize(context, 120),
                                 fit: BoxFit.contain,
